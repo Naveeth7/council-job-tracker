@@ -28,10 +28,10 @@ jobs:
       - name: Check vacancies (TiDB must be configured for persistent history)
         env:
           TIDB_HOST: ${{ secrets.TIDB_HOST }}
-          TIDB_PORT: ${{ secrets.TIDB_PORT || secrets.TIBD_PORT }}
-          TIDB_USER: ${{ secrets.TIDB_USER || secrets.TIBD_USER }}
-          TIDB_PASSWORD: ${{ secrets.TIDB_PASSWORD || secrets.TIBD_PASSWORD }}
-          TIDB_DATABASE: ${{ secrets.TIDB_DATABASE || secrets.TIBD_DATABASE }}
+          TIDB_PORT: ${{ secrets.TIDB_PORT }}
+          TIDB_USER: ${{ secrets.TIDB_USER }}
+          TIDB_PASSWORD: ${{ secrets.TIDB_PASSWORD }}
+          TIDB_DATABASE: ${{ secrets.TIDB_DATABASE }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
