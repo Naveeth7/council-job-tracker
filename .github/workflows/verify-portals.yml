@@ -60,3 +60,5 @@ jobs:
           print('PUBLIC_DATES',json.dumps({k:details.get(k) for k in ['date_posted','vacancy_d','app_clo_d','app_close_d']}))
           print('LIST_DEADLINE',first.get('app_close_d'))
 # Verify the public API request context.
+
+# Verify compact YYYYMMDD publication and closing dates.

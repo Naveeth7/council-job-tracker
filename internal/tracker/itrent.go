@@ -15,7 +15,7 @@ import (
 
 func vacancyDate(s string) string {
 	s = strings.TrimSpace(strip(s))
-	for _, layout := range []string{"2006-01-02", "02/01/2006", "2/1/2006", "02 Jan 2006", "2 January 2006", time.RFC3339} {
+	for _, layout := range []string{"20060102", "2006-01-02", "02/01/2006", "2/1/2006", "02 Jan 2006", "2 January 2006", time.RFC3339} {
 		if d, e := time.Parse(layout, s); e == nil {
 			return d.Format("2006-01-02")
 		}
