@@ -30,3 +30,26 @@ jobs:
           r=json.load(open('/tmp/portal-report.json'))
           for c in r['checks']:print(c['name'],c['status'],c['message'])
           for j in r['jobs']:print(j['title'],j['posted'],j['deadline'])
+      - name: Inspect response format without session values
+        shell: python
+        run: |
+          import urllib.request, urllib.parse, http.cookiejar, json
+          from html.parser import HTMLParser
+          url='https://ce0872li.webitrent.com/ce0872li_webrecruitment/wrd/run/ETREC179GF.open?WVID=9966750H9s'
+          opener=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+          raw=opener.open(urllib.request.Request(url,headers={'User-Agent':'CouncilJobTracker/1.0'}),timeout=30).read().decode('utf-8')
+          class P(HTMLParser):
+            action=''
+            def handle_starttag(self,t,a):
+              d=dict(a)
+              if t=='form' and d.get('id')=='ETREC179GF':self.action=d['action']
+          p=P();p.feed(raw)
+          q=urllib.parse.parse_qs(urllib.parse.urlsplit(p.action).query)
+          requrl=urllib.parse.urljoin(url,'etrec106gf.json')+'?'+urllib.parse.urlencode({k:v[0] for k,v in q.items()})
+          response=opener.open(urllib.request.Request(requrl,headers={'User-Agent':'CouncilJobTracker/1.0','Accept':'application/json','X-Requested-With':'XMLHttpRequest','Referer':url}),timeout=30)
+          body=response.read()
+          try:
+            obj=json.loads(body)
+            shape=list(obj) if isinstance(obj,dict) else type(obj).__name__
+          except Exception:shape='not JSON'
+          print('FORMAT',response.headers.get('Content-Type'),len(body),body[:4].hex(),shape)
