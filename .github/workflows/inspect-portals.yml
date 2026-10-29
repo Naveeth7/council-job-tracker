@@ -11,44 +11,46 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect public HTML without credentials
-        shell: python
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --prefix /tmp/portal-inspect playwright
+      - run: /tmp/portal-inspect/node_modules/.bin/playwright install --with-deps chromium
+      - name: Inspect rendered public pages
+        shell: node {0}
         run: |
-          import csv, urllib.request, urllib.parse, urllib.robotparser, json, base64, gzip, re, time
-          from html.parser import HTMLParser
-          class Structure(HTMLParser):
-            def __init__(self):
-              super().__init__(); self.parts=[]; self.links=[]; self.skip=0
-            def handle_starttag(self,t,attrs):
-              d=dict(attrs)
-              if t in ['script','style']: self.skip+=1; return
-              if self.skip:return
-              if t=='a' and d.get('href'):self.links.append(d['href'])
-              a={k:v for k,v in attrs if k in ['class','id','name','type','action','href']}
-              if t=='input' and d.get('name','').upper()=='WVID': a['value']=d.get('value','')
-              if 'href' in a: a['href']=re.sub(r'(?:%1B|\x1b|&)(?:USESSION|SESSION)[^&]*','',a['href'],flags=re.I)
-              self.parts.append('<'+t+' '+repr(a)+'>')
-            def handle_endtag(self,t):
-              if t in ['script','style']: self.skip=max(0,self.skip-1);return
-              if not self.skip:self.parts.append('</'+t+'>')
-            def handle_data(self,d):
-              if not self.skip and d.strip():self.parts.append(d.strip())
-          def read(url):
-            origin=urllib.parse.urlsplit(url)
-            rp=urllib.robotparser.RobotFileParser(origin.scheme+'://'+origin.netloc+'/robots.txt');rp.read()
-            if not rp.can_fetch('CouncilJobTracker/1.0',url): raise RuntimeError('robots policy disallows')
-            req=urllib.request.Request(url,headers={'User-Agent':'CouncilJobTracker/1.0'})
-            raw=urllib.request.urlopen(req,timeout=30).read().decode('utf-8','replace')
-            p=Structure();p.feed(raw)
-            print('PORTAL_STRUCTURE '+base64.b64encode(gzip.compress(json.dumps({'url':url,'structure':'\n'.join(p.parts)}).encode())).decode())
-            time.sleep(1)
-            return p
-          for row in csv.DictReader(open('config/councils.csv')):
-            if row['adapter']!='itrent':continue
-            try:
-              p=read(row['url'])
-              all_links=[urllib.parse.urljoin(row['url'],u) for u in p.links if 'ETREC106GF' in u.upper()]
-              if all_links:p=read(all_links[0])
-              detail=[urllib.parse.urljoin(row['url'],u) for u in p.links if 'ETREC107GF' in u.upper()]
-              if detail:read(detail[0])
-            except Exception as e:print('PORTAL_ERROR '+row['name']+' '+str(e))
+          const {chromium}=require('/tmp/portal-inspect/node_modules/playwright');
+          const zlib=require('node:zlib');
+          const urls=[
+            'https://ce0872li.webitrent.com/ce0872li_webrecruitment/wrd/run/ETREC179GF.open?WVID=9966750H9s',
+            'https://basbcli.webitrent.com/basbcli_webrecruitment/wrd/run/etrec179gf.open?wvid=7164787PyS',
+            'https://ce0017li.webitrent.com/ce0017li_webrecruitment/wrd/run/ETREC179GF.open?WVID=8070960wxx'
+          ];
+          (async()=>{
+            const browser=await chromium.launch();
+            for(const url of urls){
+              const context=await browser.newContext({userAgent:'CouncilJobTracker/1.0'});
+              const page=await context.newPage();
+              try{
+                await page.goto(url,{waitUntil:'networkidle',timeout:45000});
+                const body=await page.locator('body').innerText();
+                if(/challenge|verify you are human/i.test(await page.title())){console.log('PORTAL_ERROR security challenge');continue;}
+                const structure=await page.evaluate(()=>{
+                  const d=document.documentElement.cloneNode(true);
+                  d.querySelectorAll('script,style,input[type=hidden],textarea').forEach(x=>x.remove());
+                  d.querySelectorAll('*').forEach(el=>{
+                    for(const attr of [...el.attributes]){
+                      if(!['class','id','name','type','role','aria-label','href','action'].includes(attr.name)){el.removeAttribute(attr.name);continue;}
+                      if(['href','action'].includes(attr.name)){
+                        try{const u=new URL(attr.value,location.href);el.setAttribute(attr.name,u.origin+u.pathname);}catch{el.removeAttribute(attr.name);}
+                      }
+                    }
+                  });
+                  return d.outerHTML.replace(/[a-f0-9]{20,}/gi,'[redacted]');
+                });
+                console.log('PORTAL_STRUCTURE '+zlib.gzipSync(JSON.stringify({url,structure})).toString('base64'));
+              }catch(e){console.log('PORTAL_ERROR '+url+' '+e.message);}
+              finally{await context.close();}
+            }
+            await browser.close();
+          })();
