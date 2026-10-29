@@ -103,6 +103,10 @@ func (s *Scanner) data(ctx context.Context, raw string) ([]byte, error) {
 		if u, err := url.Parse(raw); err == nil && strings.HasSuffix(u.Path, ".json") {
 			req.Header.Set("Accept", "application/json")
 			req.Header.Set("X-Requested-With", "XMLHttpRequest")
+			if strings.Contains(u.Hostname(), "webitrent.com") {
+				referer := u.ResolveReference(&url.URL{Path: "ETREC179GF.open", RawQuery: url.Values{"WVID": {u.Query().Get("WVID")}}.Encode()})
+				req.Header.Set("Referer", referer.String())
+			}
 		}
 		res, e := s.Client.Do(req)
 		if e != nil {
