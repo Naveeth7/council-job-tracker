@@ -53,5 +53,10 @@ jobs:
             shape=list(obj) if isinstance(obj,dict) else type(obj).__name__
           except Exception:shape='not JSON'
           print('FORMAT',response.headers.get('Content-Type'),len(body),body[:4].hex(),shape)
-
+          first=obj['results'][0]
+          q['VACANCY_ID']=[first['vacancy_id']]
+          detailurl=urllib.parse.urljoin(url,'etrec107gf.json')+'?'+urllib.parse.urlencode({k:v[0] for k,v in q.items()})
+          details=json.load(opener.open(urllib.request.Request(detailurl,headers={'User-Agent':'CouncilJobTracker/1.0','Referer':url,'Accept':'application/json','X-Requested-With':'XMLHttpRequest'}),timeout=30))[0]
+          print('PUBLIC_DATES',json.dumps({k:details.get(k) for k in ['date_posted','vacancy_d','app_clo_d','app_close_d']}))
+          print('LIST_DEADLINE',first.get('app_close_d'))
 # Verify the public API request context.
