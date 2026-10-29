@@ -159,3 +159,11 @@ See `VALIDATION.md` for the checks completed while preparing this release.
 
 ## Grouped dashboard filters
 The scanner retains all collected vacancies, including those without keyword matches. The dashboard starts with no keyword selection and shows all current openings from supported sources. Group checkboxes select/clear their children; partial selections are shown as indeterminate. Selections across both groups use OR matching. Keyword tags are computed from full titles and descriptions before public excerpts are shortened. Initial groups: IT & Technology (IT, ICT, Digital, Tech, Technical, Analyst, Web); Business & Administration (Business, Admin, Project Officer, Business Support). Keyword editing is deferred.
+
+## Additional recruitment platforms
+- Jobtrain: discover the HTML card endpoint from the listing page and follow Skip offsets until the advertised total is reached; read each full JobPosting. Bath's portal also advertises partner/school roles; the dashboard shows the advertised employer when supplied.
+- Hireserve: discover the public feed from the search form, validate its total, then read each advert. Invalid JSON-LD falls back to the advert container, with publication dates/deadlines/salary taken from the feed.
+- WMJobs: read all linked search result pages and job descriptions. Birmingham currently uses the supplied quoted keyword search, so this is not certified employer-wide coverage.
+- Aberdeenshire: verified council-only organisation 2603; Ashford's portal identity verified through the council website.
+- iTrent: check accessibility only. MHR security challenges are reported as blocked; no challenge bypass is attempted. Vacancy extraction is not enabled for these portals.
+- One retry for transient request failures or server errors; no retries for access/security challenges. Partial pagination preserves readable results and marks coverage incomplete.

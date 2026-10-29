@@ -1,15 +1,15 @@
 name,url,adapter,confirmed,notes,routes
 Aberdeen City Council,https://myjobscotland.gov.uk/search-jobs?organisation=2602&show_organisation,myjobscotland,True,,Skilled Worker
-Aberdeenshire Council,https://myjobscotland.gov.uk/search-jobs?organisation=2603%2C6985%2C9523&show_organisation,myjobscotland,False,Council association inferred from document order; please verify. Page could not be independently checked.,Skilled Worker
+Aberdeenshire Council,https://myjobscotland.gov.uk/search-jobs?organisation=2603&show_organisation,myjobscotland,True,Council identity verified on myjobscotland; council-only organisation filter.,Skilled Worker
 Angus Council,https://myjobscotland.gov.uk/search-jobs?organisation=2604,myjobscotland,True,,Skilled Worker
 Argyll and Bute Council,https://myjobscotland.gov.uk/search-jobs?organisation=2605&show_organisation,myjobscotland,True,,Skilled Worker
-Ashford Borough Council,https://ce0872li.webitrent.com/ce0872li_webrecruitment/wrd/run/ETREC179GF.open?WVID=9966750H9s,manual,False,Council association inferred from document order; please verify. Page could not be independently checked.,Skilled Worker
-Basildon Borough Council,https://basbcli.webitrent.com/basbcli_webrecruitment/wrd/run/etrec179gf.open?wvid=7164787PyS,manual,True,,Skilled Worker
-Basingstoke & Deane Borough Council,https://careers.basingstoke.gov.uk/vacancies.html#filter=p_web_site_id%3D6700%26p_published_to%3DWWW%26p_language%3DDEFAULT%26p_direct%3DY%26p_format%3DMOBILE%26p_include_exclude_from_list%3DN%26p_search%3D,manual,True,,Skilled Worker
-Bassetlaw District Council,https://ce0017li.webitrent.com/ce0017li_webrecruitment/wrd/run/ETREC179GF.open?WVID=8070960wxx,manual,True,,Skilled Worker
-Bath and North East Somerset Council,https://www.jobtrain.co.uk/bathnesjobs/Home/Job,manual,True,,Skilled Worker
+Ashford Borough Council,https://ce0872li.webitrent.com/ce0872li_webrecruitment/wrd/run/ETREC179GF.open?WVID=9966750H9s,itrent,True,Link verified on ashford.gov.uk/working-for-us; MHR security challenge observed.,Skilled Worker
+Basildon Borough Council,https://basbcli.webitrent.com/basbcli_webrecruitment/wrd/run/etrec179gf.open?wvid=7164787PyS,itrent,True,,Skilled Worker
+Basingstoke & Deane Borough Council,https://careers.basingstoke.gov.uk/vacancies.html,hireserve,True,,Skilled Worker
+Bassetlaw District Council,https://ce0017li.webitrent.com/ce0017li_webrecruitment/wrd/run/ETREC179GF.open?WVID=8070960wxx,itrent,True,,Skilled Worker
+Bath and North East Somerset Council,https://www.jobtrain.co.uk/bathnesjobs/Home/Job,jobtrain,True,,Skilled Worker
 Bedford Borough Council,https://bedfordboroughcouncil-career.talent-soft.com/job/list-of-jobs.aspx,talentsoft,True,,Skilled Worker
-"Birmingham City Council, Corporate",https://www.wmjobs.co.uk/searchjobs/?Sector=1&keywords=%22birmingham+city+council%22&countrycode=GB&sort=Date,manual,True,Supplied WMJobs link contains sector and keyword filters; it may omit roles.,Skilled Worker
+"Birmingham City Council, Corporate",https://www.wmjobs.co.uk/searchjobs/?Sector=1&keywords=%22birmingham+city+council%22&countrycode=GB&sort=Date,wmjobs,True,Supplied WMJobs link contains sector and keyword filters; it may omit roles.,Skilled Worker
 BLACKPOOL COUNCIL,,manual,False,,Skilled Worker
 "Bournemouth, Christchurch and Poole Council",,manual,False,,Skilled Worker
 Bracknell Forest Borough Council,,manual,False,,Skilled Worker

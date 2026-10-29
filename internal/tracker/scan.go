@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -44,6 +45,9 @@ func (s *Scanner) allowed(ctx context.Context, raw string) error {
 		if e != nil {
 			return e
 		}
+		if securityChallenge(b) {
+			return errors.New("recruitment provider security challenge blocks automated access; manual check required")
+		}
 		if res.StatusCode != 404 && res.StatusCode != 200 {
 			return errors.New("robots.txt unavailable; manual check required")
 		}
@@ -63,33 +67,63 @@ func (s *Scanner) allowed(ctx context.Context, raw string) error {
 	}
 	return nil
 }
-func (s *Scanner) page(ctx context.Context, raw string) (*html.Node, error) {
+func securityChallenge(b []byte) bool {
+	lower := strings.ToLower(string(b))
+	return strings.Contains(lower, "mhr cloud services | challenge") || strings.Contains(lower, "verify you are human")
+}
+func (s *Scanner) data(ctx context.Context, raw string) ([]byte, error) {
 	if e := s.allowed(ctx, raw); e != nil {
 		return nil, e
 	}
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case <-time.After(s.Delay):
+	for attempt := 0; attempt < 2; attempt++ {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(s.Delay):
+		}
+		req, e := http.NewRequestWithContext(ctx, "GET", raw, nil)
+		if e != nil {
+			return nil, e
+		}
+		req.Header.Set("User-Agent", userAgent)
+		res, e := s.Client.Do(req)
+		if e != nil {
+			if attempt == 0 && ctx.Err() == nil {
+				continue
+			}
+			return nil, errors.New("page request failed after retry")
+		}
+		b, readErr := io.ReadAll(io.LimitReader(res.Body, 5*1024*1024+1))
+		res.Body.Close()
+		if securityChallenge(b) {
+			return nil, errors.New("recruitment provider security challenge blocks automated access; manual check required")
+		}
+		if res.StatusCode >= 500 && attempt == 0 {
+			continue
+		}
+		if res.StatusCode != 200 {
+			return nil, fmt.Errorf("page returned HTTP %d", res.StatusCode)
+		}
+		if readErr != nil || len(b) > 5*1024*1024 {
+			return nil, errors.New("page could not be fully read")
+		}
+		return b, nil
 	}
-	req, e := http.NewRequestWithContext(ctx, "GET", raw, nil)
+	return nil, errors.New("page request failed")
+}
+func (s *Scanner) page(ctx context.Context, raw string) (*html.Node, error) {
+	b, e := s.data(ctx, raw)
 	if e != nil {
 		return nil, e
 	}
-	req.Header.Set("User-Agent", userAgent)
-	res, e := s.Client.Do(req)
-	if e != nil {
-		return nil, errors.New("page request failed")
-	}
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		return nil, fmt.Errorf("page returned HTTP %d", res.StatusCode)
-	}
-	return parseHTML(io.LimitReader(res.Body, 5*1024*1024))
+	return parseHTML(bytes.NewReader(b))
 }
 func (s *Scanner) ScanCouncil(ctx context.Context, c Council) ([]Job, Check) {
 	check := Check{Name: c.Name, URL: c.URL, CheckedAt: time.Now().UTC().Format(time.RFC3339)}
 	fail := func(status, msg string) ([]Job, Check) {
+		if strings.Contains(msg, "security challenge") {
+			status = "blocked"
+		}
 		check.Status = status
 		check.Message = msg
 		return []Job{}, check
@@ -100,7 +134,13 @@ func (s *Scanner) ScanCouncil(ctx context.Context, c Council) ([]Job, Check) {
 	if !c.Confirmed {
 		return fail("needs_verification", "Confirm the supplied link belongs to this council, then set confirmed=true.")
 	}
-	if c.Adapter != "myjobscotland" && c.Adapter != "talentsoft" {
+	if c.Adapter == "itrent" {
+		if _, e := s.page(ctx, c.URL); e != nil {
+			return fail("failed", e.Error())
+		}
+		return fail("manual_check", "Portal is accessible but vacancy extraction still needs a tested connector.")
+	}
+	if c.Adapter != "myjobscotland" && c.Adapter != "talentsoft" && c.Adapter != "wmjobs" && c.Adapter != "jobtrain" && c.Adapter != "hireserve" {
 		return fail("manual_check", "This recruitment platform needs a tested connector. Open the careers page for now.")
 	}
 	next := c.URL
@@ -109,6 +149,15 @@ func (s *Scanner) ScanCouncil(ctx context.Context, c Council) ([]Job, Check) {
 	jobURLs := []string{}
 	partial := false
 	expectedTotal := 0
+	feedJobs := map[string]Job{}
+	if c.Adapter == "hireserve" {
+		var e error
+		jobURLs, feedJobs, expectedTotal, e = s.hireserveLinks(ctx, c)
+		if e != nil {
+			return fail("failed", e.Error())
+		}
+		next = ""
+	}
 	for page := 0; next != ""; page++ {
 		if page >= s.MaxPages || seenPages[next] {
 			partial = true
@@ -117,7 +166,11 @@ func (s *Scanner) ScanCouncil(ctx context.Context, c Council) ([]Job, Check) {
 		seenPages[next] = true
 		n, e := s.page(ctx, next)
 		if e != nil {
-			return fail("failed", e.Error())
+			if len(jobURLs) == 0 {
+				return fail("failed", e.Error())
+			}
+			partial = true
+			break
 		}
 		ls := links(n, next, c.Adapter)
 		if t := advertisedTotal(n); t > expectedTotal {
@@ -150,6 +203,24 @@ func (s *Scanner) ScanCouncil(ctx context.Context, c Council) ([]Job, Check) {
 			continue
 		}
 		jobs := parseJobs(n, raw, c.Name)
+		if c.Adapter == "hireserve" {
+			if fallback, ok := feedJobs[raw]; ok {
+				if len(jobs) == 0 {
+					jobs = hireserveDetail(n, fallback)
+				}
+				for i := range jobs {
+					if jobs[i].Posted == "" {
+						jobs[i].Posted = fallback.Posted
+					}
+					if jobs[i].Deadline == "" {
+						jobs[i].Deadline = fallback.Deadline
+					}
+					if jobs[i].Salary == "" {
+						jobs[i].Salary = fallback.Salary
+					}
+				}
+			}
+		}
 		if len(jobs) == 0 {
 			failures++
 			continue
@@ -161,6 +232,12 @@ func (s *Scanner) ScanCouncil(ctx context.Context, c Council) ([]Job, Check) {
 	}
 	check.Status = "checked"
 	check.Message = fmt.Sprintf("Reviewed %d vacancy descriptions across all available categories; collected %d.", check.Reviewed, len(out))
+	if c.Adapter == "wmjobs" {
+		check.Message += " Source is the supplied Birmingham keyword search, not a verified employer-wide inventory."
+	}
+	if c.Adapter == "jobtrain" {
+		check.Message += " Includes partner/school adverts published on this council's portal; verify the employer in each advert."
+	}
 	if failures > 0 || partial {
 		check.Status = "partial"
 		check.Message += fmt.Sprintf(" Incomplete coverage: %d descriptions unavailable; page/job limit reached: %t.", failures, partial)

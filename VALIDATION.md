@@ -20,3 +20,6 @@
 - Mobile browser rendering: responsive styles are included; a full device matrix was not tested.
 
 First-found dates belong to this scan. Missing posting dates remain empty. Broad keyword matches include non-IT roles that mention IT/ICT skills or technical work, as requested.
+
+### Additional connectors (29 October 2026)
+Added deterministic scanner tests covering Jobtrain pagination, retention of non-keyword roles, missing listing pages marked partial, Hireserve feed discovery and detail fallback, WMJobs whitespace links and location arrays, and security challenge detection without retries. Smoke-tested parsing against freshly fetched Bath, Birmingham and Basingstoke adverts. Full live scans run separately; dashboard coverage remains authoritative for current success/failure counts.

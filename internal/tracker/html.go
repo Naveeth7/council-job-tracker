@@ -124,13 +124,23 @@ func parseJobs(n *html.Node, source, council string) []Job {
 		}
 		sum := sha256.Sum256([]byte(council + "|" + id))
 		job := Job{ID: hex.EncodeToString(sum[:12]), Council: council, Title: title, Description: desc, URL: u, Posted: date(str(v["datePosted"])), Deadline: date(str(v["validThrough"])), Sponsorship: "Not stated — verify with employer", Matched: Matches(title + " " + desc)}
-		if loc, ok := v["jobLocation"].(map[string]any); ok {
+		if org, ok := v["hiringOrganization"].(map[string]any); ok {
+			job.Employer = strip(str(org["name"]))
+		}
+		location := v["jobLocation"]
+		if list, ok := location.([]any); ok && len(list) > 0 {
+			location = list[0]
+		}
+		if loc, ok := location.(map[string]any); ok {
 			if a, ok := loc["address"].(map[string]any); ok {
 				job.Location = str(a["addressLocality"])
 				if job.Location == "" {
 					job.Location = str(a["streetAddress"])
 				}
 			}
+		}
+		if salary, ok := v["baseSalary"].(string); ok {
+			job.Salary = html.UnescapeString(salary)
 		}
 		if s, ok := v["baseSalary"].(map[string]any); ok {
 			if val, ok := s["value"].(map[string]any); ok {
@@ -144,7 +154,7 @@ func parseJobs(n *html.Node, source, council string) []Job {
 			}
 		}
 		lower := strings.ToLower(desc)
-		for _, phrase := range []string{"unable to offer visa sponsorship", "cannot offer visa sponsorship", "do not offer visa sponsorship", "not eligible for sponsorship"} {
+		for _, phrase := range []string{"unable to offer visa sponsorship", "cannot offer visa sponsorship", "do not offer visa sponsorship", "not eligible for sponsorship", "sponsorship is not available for this post", "sponsorship is not available for this role"} {
 			if strings.Contains(lower, phrase) {
 				job.Sponsorship = "Advert says no visa sponsorship"
 			}
@@ -185,12 +195,21 @@ func parseJobs(n *html.Node, source, council string) []Job {
 
 func advertisedTotal(n *html.Node) int {
 	s := text(n)
-	for _, pattern := range []string{`(?i)Showing\s+\d+\s*[-–]\s*\d+\s+of\s+(\d+)`, `(?i)Number of results:\s*(\d+)`} {
+	for _, pattern := range []string{`(?i)Showing\s+\d+\s*[-–]\s*\d+\s+of\s+(\d+)`, `(?i)Number of results:\s*(\d+)`, `(?i)Found\s+(\d+)\s+jobs`} {
 		re := regexp.MustCompile(pattern)
 		if m := re.FindStringSubmatch(s); len(m) > 1 {
 			v, _ := strconv.Atoi(m[1])
 			return v
 		}
+	}
+	count := 0
+	walk(n, func(x *html.Node) {
+		if attr(x, "id") == "totalMatchRecords" {
+			count, _ = strconv.Atoi(attr(x, "value"))
+		}
+	})
+	if count > 0 {
+		return count
 	}
 	return 0
 }
@@ -208,7 +227,7 @@ func links(n *html.Node, base string, adapter string) pageLinks {
 		if x.Type != html.ElementNode || x.Data != "a" {
 			return
 		}
-		ref, e := url.Parse(attr(x, "href"))
+		ref, e := url.Parse(strings.TrimSpace(attr(x, "href")))
 		if e != nil {
 			return
 		}
@@ -219,7 +238,7 @@ func links(n *html.Node, base string, adapter string) pageLinks {
 		u.Fragment = ""
 		s := u.String()
 		p := strings.ToLower(u.Path)
-		isJob := (adapter == "myjobscotland" && strings.Contains(p, "/jobs/") && strings.TrimSuffix(p, "/") != strings.TrimSuffix(b.Path, "/")) || (adapter == "talentsoft" && strings.HasPrefix(p, "/job/job-") && strings.HasSuffix(p, ".aspx"))
+		isJob := (adapter == "myjobscotland" && strings.Contains(p, "/jobs/") && strings.TrimSuffix(p, "/") != strings.TrimSuffix(b.Path, "/")) || (adapter == "talentsoft" && strings.HasPrefix(p, "/job/job-") && strings.HasSuffix(p, ".aspx")) || (adapter == "wmjobs" && strings.HasPrefix(p, "/job/")) || (adapter == "jobtrain" && strings.HasSuffix(p, "/job/jobdetail") && u.Query().Get("JobId") != "")
 		if isJob && !seen[s] {
 			out.jobs = append(out.jobs, s)
 			seen[s] = true
@@ -239,6 +258,9 @@ func links(n *html.Node, base string, adapter string) pageLinks {
 			out.next = s
 		}
 	})
+	if adapter == "jobtrain" {
+		out.next = jobtrainNext(n, b)
+	}
 	return out
 }
 func parseHTML(r io.Reader) (*html.Node, error) { return html.Parse(r) }

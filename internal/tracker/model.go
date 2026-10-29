@@ -40,6 +40,7 @@ type Council struct {
 type Job struct {
 	ID          string   `json:"id"`
 	Council     string   `json:"council"`
+	Employer    string   `json:"employer,omitempty"`
 	Title       string   `json:"title"`
 	URL         string   `json:"url"`
 	Description string   `json:"description"`
