@@ -5,7 +5,7 @@ on:
     - cron: '23 7 * * *'
   push:
     branches: [main]
-    paths: ['site/**', 'config/**', 'cmd/**', 'internal/**', 'go.mod', 'go.sum', '.github/workflows/**']
+    paths: ['site/**', 'config/**', 'cmd/**', 'internal/**', 'go.mod', 'go.sum', '.github/workflows/check-and-publish.yml']
 permissions:
   contents: read
   pages: write

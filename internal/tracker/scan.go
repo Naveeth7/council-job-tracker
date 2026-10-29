@@ -36,23 +36,35 @@ func (s *Scanner) allowed(ctx context.Context, raw string) error {
 	if _, ok := s.robots[origin]; !ok {
 		req, _ := http.NewRequestWithContext(ctx, "GET", origin+"/robots.txt", nil)
 		req.Header.Set("User-Agent", userAgent)
-		res, e := s.Client.Do(req)
-		if e != nil {
-			return errors.New("could not check robots.txt")
+		var b []byte
+		var status int
+		for attempt := 0; attempt < 2; attempt++ {
+			res, err := s.Client.Do(req)
+			if err != nil {
+				if attempt == 0 && ctx.Err() == nil {
+					continue
+				}
+				return errors.New("could not check robots.txt")
+			}
+			status = res.StatusCode
+			b, e = io.ReadAll(io.LimitReader(res.Body, 1024*1024))
+			res.Body.Close()
+			if securityChallenge(b) {
+				return errors.New("recruitment provider security challenge blocks automated access; manual check required")
+			}
+			if status >= 500 && attempt == 0 {
+				continue
+			}
+			if e != nil {
+				return errors.New("could not read robots.txt")
+			}
+			break
 		}
-		defer res.Body.Close()
-		b, e := io.ReadAll(io.LimitReader(res.Body, 1024*1024))
-		if e != nil {
-			return e
-		}
-		if securityChallenge(b) {
-			return errors.New("recruitment provider security challenge blocks automated access; manual check required")
-		}
-		if res.StatusCode != 404 && res.StatusCode != 200 {
-			return errors.New("robots.txt unavailable; manual check required")
+		if status != 404 && status != 200 {
+			return fmt.Errorf("robots.txt returned HTTP %d; manual check required", status)
 		}
 		var data *robotstxt.RobotsData
-		if res.StatusCode == 404 {
+		if status == 404 {
 			data, e = robotstxt.FromStatusAndBytes(404, nil)
 		} else {
 			data, e = robotstxt.FromBytes(b)
@@ -135,10 +147,7 @@ func (s *Scanner) ScanCouncil(ctx context.Context, c Council) ([]Job, Check) {
 		return fail("needs_verification", "Confirm the supplied link belongs to this council, then set confirmed=true.")
 	}
 	if c.Adapter == "itrent" {
-		if _, e := s.page(ctx, c.URL); e != nil {
-			return fail("failed", e.Error())
-		}
-		return fail("manual_check", "Portal is accessible but vacancy extraction still needs a tested connector.")
+		return s.scanITrent(ctx, c)
 	}
 	if c.Adapter != "myjobscotland" && c.Adapter != "talentsoft" && c.Adapter != "wmjobs" && c.Adapter != "jobtrain" && c.Adapter != "hireserve" {
 		return fail("manual_check", "This recruitment platform needs a tested connector. Open the careers page for now.")

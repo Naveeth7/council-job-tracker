@@ -95,3 +95,29 @@ func TestSecurityChallengeReportedWithoutRetry(t *testing.T) {
 		t.Fatalf("%+v requests=%d", ch, count)
 	}
 }
+
+func TestITrentFullDescriptionsAndSessionPrivacy(t *testing.T) {
+	s := fixtureScanner(map[string]string{
+		"/search?wvid=public": `<form id="ETREC179GF" action="ETREC179GF?USESSION=anonymous-private-session&amp;WVID=public&amp;LANG=USA"></form>`,
+		"/etrec106gf.json?LANG=USA&USESSION=anonymous-private-session&WVID=public":                 `{"search":{"total_rec":1,"rec_from":1,"rec_to":1},"results":[{"vacancy_id":"vac1","job_title":"Cook"}]}`,
+		"/etrec107gf.json?LANG=USA&USESSION=anonymous-private-session&VACANCY_ID=vac1&WVID=public": `[{"job_title":"Job title","job_titles":"Cook","job_description":"<p>Prepare meals for residents.</p>","vacancy_d":"29/10/2026","app_close_d":"12/11/2026","salary":"£25,000","location":"Example town","copy_link":"https://example.org/ETREC107GF.open?USESSION=anonymous-private-session"}]`,
+	})
+	jobs, ch := s.ScanCouncil(context.Background(), Council{Name: "Example Council", URL: "https://example.org/search?wvid=public", Adapter: "itrent", Confirmed: true})
+	if ch.Status != "checked" || len(jobs) != 1 {
+		t.Fatalf("%+v %+v", ch, jobs)
+	}
+	j := jobs[0]
+	if j.Title != "Cook" || j.Posted != "2026-10-29" || j.Deadline != "2026-11-12" || len(j.Matched) != 0 || strings.Contains(j.URL, "SESSION") || strings.Contains(j.URL, "anonymous-private-session") {
+		t.Fatalf("unexpected public job: %+v", j)
+	}
+}
+func TestITrentUnexpectedResponseNotEmptySuccess(t *testing.T) {
+	s := fixtureScanner(map[string]string{
+		"/search": `<form id="ETREC179GF" action="ETREC179GF?USESSION=session&amp;WVID=public"></form>`,
+		"/etrec106gf.json?USESSION=session&WVID=public": `{"error":"temporarily unavailable"}`,
+	})
+	_, ch := s.ScanCouncil(context.Background(), Council{Name: "Example Council", URL: "https://example.org/search", Adapter: "itrent", Confirmed: true})
+	if ch.Status != "failed" {
+		t.Fatalf("%+v", ch)
+	}
+}

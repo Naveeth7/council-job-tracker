@@ -1,8 +1,6 @@
 name: Inspect public recruitment pages
 on:
   workflow_dispatch:
-  push:
-    paths: ['.github/workflows/inspect-portals.yml']
 permissions:
   contents: read
 jobs:
