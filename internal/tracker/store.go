@@ -6,8 +6,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/go-sql-driver/mysql"
+	"net"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -18,7 +21,7 @@ type Store struct {
 }
 
 func OpenStore(ctx context.Context, file string) (*Store, error) {
-	host := os.Getenv("TIDB_HOST")
+	host := strings.TrimSpace(os.Getenv("TIDB_HOST"))
 	if host == "" {
 		return &Store{file: file}, nil
 	}
@@ -27,19 +30,25 @@ func OpenStore(ctx context.Context, file string) (*Store, error) {
 			return nil, errors.New("missing TiDB connection secret")
 		}
 	}
+	if strings.Contains(host, "://") || strings.ContainsAny(host, "/:") {
+		return nil, errors.New("TIDB_HOST must contain only the TiDB hostname, without a protocol, port, or path")
+	}
 	if e := mysql.RegisterTLSConfig("tidb", &tls.Config{MinVersion: tls.VersionTLS12, ServerName: host}); e != nil {
 		return nil, e
 	}
 	cfg := mysql.NewConfig()
-	cfg.User = os.Getenv("TIDB_USER")
+	cfg.User = strings.TrimSpace(os.Getenv("TIDB_USER"))
 	cfg.Passwd = os.Getenv("TIDB_PASSWORD")
 	cfg.Net = "tcp"
-	port := os.Getenv("TIDB_PORT")
+	port := strings.TrimSpace(os.Getenv("TIDB_PORT"))
 	if port == "" {
 		port = "4000"
 	}
+	if p, err := strconv.Atoi(port); err != nil || p < 1 || p > 65535 {
+		return nil, errors.New("TIDB_PORT must be a port number, usually 4000")
+	}
 	cfg.Addr = host + ":" + port
-	cfg.DBName = os.Getenv("TIDB_DATABASE")
+	cfg.DBName = strings.TrimSpace(os.Getenv("TIDB_DATABASE"))
 	cfg.TLSConfig = "tidb"
 	cfg.Timeout = 20 * time.Second
 	cfg.ReadTimeout = 30 * time.Second
@@ -52,7 +61,7 @@ func OpenStore(ctx context.Context, file string) (*Store, error) {
 	db.SetConnMaxLifetime(3 * time.Minute)
 	if e = db.PingContext(ctx); e != nil {
 		db.Close()
-		return nil, errors.New("TiDB connection failed; check secrets, network access, and free quota")
+		return nil, connectionFailure(e)
 	}
 	_, e = db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS tracker_state (id INT PRIMARY KEY, payload JSON NOT NULL)`)
 	if e != nil {
@@ -111,4 +120,33 @@ func (s *Store) Save(ctx context.Context, state State) error {
 		return errors.New("state file is required")
 	}
 	return WriteJSON(s.file, state)
+}
+
+func connectionFailure(err error) error {
+	var dbErr *mysql.MySQLError
+	if errors.As(err, &dbErr) {
+		switch dbErr.Number {
+		case 1045:
+			return errors.New("TiDB rejected authentication (1045): verify TIDB_USER is the full username from Connect and TIDB_PASSWORD is the database password, not the console sign-in password")
+		case 1049:
+			return errors.New("TiDB database not found (1049): set TIDB_DATABASE to council_tracker")
+		case 1142, 1044:
+			return errors.New("TiDB user lacks permission for the configured database")
+		default:
+			return fmt.Errorf("TiDB returned database error code %d; check instance status and quota", dbErr.Number)
+		}
+	}
+	var dnsErr *net.DNSError
+	if errors.As(err, &dnsErr) {
+		return errors.New("TiDB hostname could not be resolved: verify TIDB_HOST contains only the hostname from Connect")
+	}
+	var certErr *tls.CertificateVerificationError
+	if errors.As(err, &certErr) {
+		return errors.New("TiDB TLS certificate verification failed: verify the hostname; certificate checks remain enabled")
+	}
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return errors.New("TiDB connection timed out: check the connection port, instance availability, and network access settings")
+	}
+	return errors.New("TiDB connection failed before a database session was established; check host, port, instance status and network access")
 }
