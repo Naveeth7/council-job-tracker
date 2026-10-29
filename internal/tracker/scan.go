@@ -9,6 +9,7 @@ import (
 	"golang.org/x/net/html"
 	"io"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"sort"
 	"strings"
@@ -25,7 +26,8 @@ type Scanner struct {
 }
 
 func NewScanner() *Scanner {
-	return &Scanner{Client: &http.Client{Timeout: 25 * time.Second}, Delay: 500 * time.Millisecond, MaxPages: 20, MaxJobs: 300, robots: map[string]*robotstxt.RobotsData{}}
+	jar, _ := cookiejar.New(nil)
+	return &Scanner{Client: &http.Client{Timeout: 25 * time.Second, Jar: jar}, Delay: 500 * time.Millisecond, MaxPages: 20, MaxJobs: 300, robots: map[string]*robotstxt.RobotsData{}}
 }
 func (s *Scanner) allowed(ctx context.Context, raw string) error {
 	u, e := url.Parse(raw)
@@ -98,6 +100,10 @@ func (s *Scanner) data(ctx context.Context, raw string) ([]byte, error) {
 			return nil, e
 		}
 		req.Header.Set("User-Agent", userAgent)
+		if u, err := url.Parse(raw); err == nil && strings.HasSuffix(u.Path, ".json") {
+			req.Header.Set("Accept", "application/json")
+			req.Header.Set("X-Requested-With", "XMLHttpRequest")
+		}
 		res, e := s.Client.Do(req)
 		if e != nil {
 			if attempt == 0 && ctx.Err() == nil {

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"golang.org/x/net/html"
 	"net/url"
+	"sort"
 	"strings"
 	"time"
 )
@@ -91,7 +92,12 @@ func (s *Scanner) scanITrent(ctx context.Context, c Council) ([]Job, Check) {
 	}
 	var fields map[string]json.RawMessage
 	if json.Unmarshal(data, &fields) != nil || fields["results"] == nil || fields["search"] == nil {
-		return fail("Public vacancy search returned an unexpected response.")
+		keys := []string{}
+		for k := range fields {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		return fail("Public vacancy search returned an unexpected response; field names: " + strings.Join(keys, ", "))
 	}
 	if json.Unmarshal(data, &listing) != nil {
 		return fail("Public vacancy search returned unreadable data.")

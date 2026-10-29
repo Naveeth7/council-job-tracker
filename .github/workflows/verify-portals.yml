@@ -1,0 +1,32 @@
+name: Verify iTrent connectors
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/verify-portals.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: true
+      - name: Select public portal sources
+        shell: python
+        run: |
+          import csv
+          rows=[r for r in csv.DictReader(open('config/councils.csv')) if r['adapter']=='itrent']
+          with open('/tmp/portal-config.csv','w') as f:
+            w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
+      - run: go run ./cmd/tracker -config /tmp/portal-config.csv -out /tmp/portal-report.json -state /tmp/portal-state.json
+      - name: Report public results
+        shell: python
+        run: |
+          import json
+          r=json.load(open('/tmp/portal-report.json'))
+          for c in r['checks']:print(c['name'],c['status'],c['message'])
+          for j in r['jobs']:print(j['title'],j['posted'],j['deadline'])
