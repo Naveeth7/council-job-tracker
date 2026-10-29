@@ -156,13 +156,11 @@ func (s *Scanner) ScanCouncil(ctx context.Context, c Council) ([]Job, Check) {
 		}
 		check.Reviewed++
 		for _, j := range jobs {
-			if len(j.Matched) > 0 {
-				out = append(out, j)
-			}
+			out = append(out, j)
 		}
 	}
 	check.Status = "checked"
-	check.Message = fmt.Sprintf("Reviewed %d vacancy descriptions across all available categories; matched %d.", check.Reviewed, len(out))
+	check.Message = fmt.Sprintf("Reviewed %d vacancy descriptions across all available categories; collected %d.", check.Reviewed, len(out))
 	if failures > 0 || partial {
 		check.Status = "partial"
 		check.Message += fmt.Sprintf(" Incomplete coverage: %d descriptions unavailable; page/job limit reached: %t.", failures, partial)

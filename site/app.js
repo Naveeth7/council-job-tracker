@@ -6,12 +6,34 @@ const statusNames = {checked:'Checked',partial:'Partial scan',failed:'Check fail
 const jobStatus = {listed:'Listed on latest check',closed:'Past deadline',not_listed:'No longer listed',unverified:'Needs rechecking'};
 let report = {jobs:[],checks:[],keywords:[]};let page=1;let filtered=[];const pageSize=15;
 
+const keywordGroups = [
+ {name:'IT & Technology', words:['IT','ICT','Digital','Tech','Technical','Analyst','Web']},
+ {name:'Business & Administration', words:['Business','Admin','Project Officer','Business Support']}
+];
+const selectedKeywords = new Set();
+function renderKeywordFilters(){
+ $('keyword-groups').innerHTML=keywordGroups.map((g,i)=>`<fieldset><legend><label><input type="checkbox" data-group="${i}"> ${escape(g.name)}</label></legend><div class="keyword-options">${g.words.map(w=>`<label><input type="checkbox" data-keyword="${escape(w)}" ${selectedKeywords.has(w)?'checked':''}> ${escape(w)}</label>`).join('')}</div></fieldset>`).join('');
+ for(const el of $('keyword-groups').querySelectorAll('[data-group]')){
+  const words=keywordGroups[Number(el.dataset.group)].words,count=words.filter(w=>selectedKeywords.has(w)).length;
+  el.checked=count===words.length;el.indeterminate=count>0&&count<words.length;
+ }
+ $('filter-summary').textContent=selectedKeywords.size?`Matching any of: ${[...selectedKeywords].join(' / ')}`:'No keyword filters — showing all openings.';
+}
+$('keyword-groups').addEventListener('change',e=>{
+ const el=e.target;
+ if(el.dataset.group!==undefined){for(const word of keywordGroups[Number(el.dataset.group)].words){if(el.checked)selectedKeywords.add(word);else selectedKeywords.delete(word);}}
+ else if(el.dataset.keyword){if(el.checked)selectedKeywords.add(el.dataset.keyword);else selectedKeywords.delete(el.dataset.keyword);}
+ page=1;renderKeywordFilters();renderJobs();
+});
+$('clear-keywords').addEventListener('click',()=>{selectedKeywords.clear();page=1;renderKeywordFilters();renderJobs();});
+renderKeywordFilters();
+
 function renderJobs(){
  const query=$('search').value.trim().toLowerCase(), council=$('council-filter').value,status=$('status-filter').value;
- filtered=report.jobs.filter(j=> (!query||[j.title,j.council,j.description,j.location].some(v=>String(v||'').toLowerCase().includes(query)))&&(!council||j.council===council)&&(status==='all'||(status==='current'?['listed','unverified'].includes(j.status):status===j.status)));
+ filtered=report.jobs.filter(j=> (!selectedKeywords.size||(j.matched||[]).some(w=>[...selectedKeywords].some(k=>k.toLowerCase()===w.toLowerCase())))&&(!query||[j.title,j.council,j.description,j.location].some(v=>String(v||'').toLowerCase().includes(query)))&&(!council||j.council===council)&&(status==='all'||(status==='current'?['listed','unverified'].includes(j.status):status===j.status)));
  const sort=$('sort').value;filtered.sort((a,b)=>sort==='deadline'?(a.deadline||'9999').localeCompare(b.deadline||'9999'):sort==='council'?a.council.localeCompare(b.council):(b.first_seen||'').localeCompare(a.first_seen||''));
  const pages=Math.max(1,Math.ceil(filtered.length/pageSize));page=Math.min(page,pages);
- $('results').textContent=`${filtered.length} matching ${filtered.length===1?'vacancy':'vacancies'} · ${(report.keywords||[]).join(' / ')}`;
+ $('results').textContent=`${filtered.length} matching ${filtered.length===1?'vacancy':'vacancies'} · ${selectedKeywords.size?'Selected keywords':'All keywords'}`;
  $('jobs').innerHTML=filtered.slice((page-1)*pageSize,page*pageSize).map(j=>`<article class="job"><div><div class="job-top"><span class="council-name">${escape(j.council)}</span><span class="badge ${j.status==='listed'?'':j.status==='unverified'?'warning':'neutral'}">${escape(jobStatus[j.status]||j.status)}</span></div><h2>${escape(j.title)}</h2><div class="job-meta"><span>${escape(j.location||'Location not provided')}</span><span>${escape(j.salary||'Salary not provided')}</span></div><p class="description">${escape((j.description||'').slice(0,260))}${(j.description||'').length>260?'…':''}</p><div class="job-meta"><span>Sponsorship: ${escape(j.sponsorship||'Not stated — verify with employer')}</span></div><div class="job-tags">${(j.matched||[]).map(k=>`<span class="chip">${escape(k)}</span>`).join('')}</div></div><div class="job-side"><span class="deadline">${escape(date(j.deadline))}</span><span class="label">APPLICATION DEADLINE</span><a class="apply" href="${safeLink(j.url)}" target="_blank" rel="noopener noreferrer">Read advert ↗</a><div class="dates">Posted: ${escape(date(j.posted))}<br>First found: ${escape(date(j.first_seen))}<br>Last seen: ${escape(date(j.last_seen))}</div></div></article>`).join('');
  $('jobs-empty').hidden=filtered.length>0;
  const h=$('jobs-empty').querySelector('h2'),p=$('jobs-empty').querySelector('p');
@@ -30,7 +52,7 @@ $('export').addEventListener('click',()=>{
  const csv='\ufeff'+[headers,...filtered.map(j=>headers.map(k=>j[k]))].map(r=>r.map(cell).join(',')).join('\r\n');const u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=u;a.download='council-job-matches.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);
 });
 async function init(){try{const res=await fetch('./jobs.json',{cache:'no-store'});if(!res.ok)throw new Error('Report unavailable');report=await res.json();if(!Array.isArray(report.jobs)||!Array.isArray(report.checks))throw new Error('Invalid report');
- $('keywords').innerHTML=report.keywords.map(k=>`<span class="chip">${escape(k)}</span>`).join('');
+
  $('count-jobs').textContent=report.jobs.filter(j=>j.status==='listed').length;$('count-checked').textContent=report.checks.filter(c=>c.status==='checked').length;$('count-linked').textContent=report.checks.filter(c=>c.url).length;$('count-attention').textContent=report.checks.filter(c=>c.url&&!['checked'].includes(c.status)).length;
  if(report.generated_at){$('last-run').textContent=date(report.generated_at);$('run-note').textContent=`Report generated ${new Date(report.generated_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'UTC'})} UTC. See council coverage for individual check results.`;}else{$('run-note').textContent='Initial setup. This is not a live vacancy report yet.';}
  for(const name of [...new Set(report.jobs.map(j=>j.council))].sort()){const o=document.createElement('option');o.value=name;o.textContent=name;$('council-filter').append(o);}renderJobs();renderCoverage();

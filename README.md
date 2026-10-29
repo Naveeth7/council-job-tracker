@@ -156,3 +156,6 @@ Open http://localhost:8000. Do not open index.html directly with file://, becaus
 Tests cover keyword false matches, structured vacancy parsing, pagination deduplication, date-only closing dates, preserving jobs after failed scans, local state persistence and sponsor-register import review. Run `go test ./...` and `go vet ./...` before deploying connector changes. Live site coverage must be checked separately because recruitment sites can change or block access.
 
 See `VALIDATION.md` for the checks completed while preparing this release.
+
+## Grouped dashboard filters
+The scanner retains all collected vacancies, including those without keyword matches. The dashboard starts with no keyword selection and shows all current openings from supported sources. Group checkboxes select/clear their children; partial selections are shown as indeterminate. Selections across both groups use OR matching. Keyword tags are computed from full titles and descriptions before public excerpts are shortened. Initial groups: IT & Technology (IT, ICT, Digital, Tech, Technical, Analyst, Web); Business & Administration (Business, Admin, Project Officer, Business Support). Keyword editing is deferred.

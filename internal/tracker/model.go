@@ -10,14 +10,24 @@ import (
 	"time"
 )
 
-var Keywords = []string{"IT", "ICT", "digital", "technical", "analyst", "web"}
+var Keywords = []string{"IT", "ICT", "Digital", "Tech", "Technical", "Analyst", "Web", "Business", "Admin", "Project Officer", "Business Support"}
 
-// IT is intentionally an uppercase acronym: the ordinary pronoun "it" must not match.
-var keywordPatterns = []*regexp.Regexp{
-	regexp.MustCompile(`\bIT\b`), regexp.MustCompile(`(?i)\bICT\b`),
-	regexp.MustCompile(`(?i)\bdigital\b`), regexp.MustCompile(`(?i)\btechnical\b`),
-	regexp.MustCompile(`(?i)\banalysts?\b`), regexp.MustCompile(`(?i)\bweb\b`),
-}
+// IT is an uppercase acronym to avoid matching the ordinary pronoun.
+var keywordPatterns = func() []*regexp.Regexp {
+	out := []*regexp.Regexp{}
+	for _, word := range Keywords {
+		pattern := `(?i)\b` + regexp.QuoteMeta(word) + `\b`
+		if word == "IT" {
+			pattern = `\bIT\b`
+		}
+		if word == "Analyst" {
+			pattern = `(?i)\banalysts?\b`
+		}
+		pattern = strings.ReplaceAll(pattern, " ", `\s+`)
+		out = append(out, regexp.MustCompile(pattern))
+	}
+	return out
+}()
 
 type Council struct {
 	Name      string `json:"name"`
