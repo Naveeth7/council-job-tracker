@@ -31,6 +31,14 @@ jobs:
             for(const url of urls){
               const context=await browser.newContext({userAgent:'CouncilJobTracker/1.0'});
               const page=await context.newPage();
+              page.on('response',async response=>{
+                if(!response.url().includes('.json'))return;
+                try{
+                  const u=new URL(response.url()), req=response.request();
+                  const shape=(v,depth=0)=>depth>5?typeof v:Array.isArray(v)?{arrayLength:v.length,item:v.length?shape(v[0],depth+1):null}:v&&typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,shape(x,depth+1)])):typeof v;
+                  console.log('API_SCHEMA '+JSON.stringify({path:u.origin+u.pathname,queryKeys:[...u.searchParams.keys()],method:req.method(),postKeys:[...new URLSearchParams(req.postData()||'').keys()],response:shape(await response.json())}));
+                }catch{}
+              });
               try{
                 await page.goto(url,{waitUntil:'networkidle',timeout:45000});
                 const body=await page.locator('body').innerText();
