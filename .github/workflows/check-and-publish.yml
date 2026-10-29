@@ -1,0 +1,57 @@
+name: Check council vacancies and publish
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 7 * * *'
+  push:
+    branches: [main]
+    paths: ['site/**', 'config/**', 'cmd/**', 'internal/**', 'go.mod', 'go.sum', '.github/workflows/**']
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: council-tracker
+  cancel-in-progress: false
+jobs:
+  check-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+          cache: true
+      - name: Test checker
+        run: go test ./...
+      - name: Check vacancies (TiDB must be configured for persistent history)
+        env:
+          TIDB_HOST: ${{ secrets.TIDB_HOST }}
+          TIDB_PORT: ${{ secrets.TIDB_PORT }}
+          TIDB_USER: ${{ secrets.TIDB_USER }}
+          TIDB_PASSWORD: ${{ secrets.TIDB_PASSWORD }}
+          TIDB_DATABASE: ${{ secrets.TIDB_DATABASE }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        run: |
+          if [ -z "$TIDB_HOST" ]; then
+            echo '::warning::TiDB is not configured. Publishing the initial dashboard without running the checker.'
+          else
+            go run ./cmd/tracker
+          fi
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+  deploy:
+    needs: check-and-build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy public dashboard
+        id: deployment
+        uses: actions/deploy-pages@v4

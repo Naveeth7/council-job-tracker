@@ -1,0 +1,207 @@
+name,url,adapter,confirmed,notes,routes
+Aberdeen City Council,https://myjobscotland.gov.uk/search-jobs?organisation=2602&show_organisation,myjobscotland,True,,Skilled Worker
+Aberdeenshire Council,https://myjobscotland.gov.uk/search-jobs?organisation=2603%2C6985%2C9523&show_organisation,myjobscotland,False,Council association inferred from document order; please verify. Page could not be independently checked.,Skilled Worker
+Angus Council,https://myjobscotland.gov.uk/search-jobs?organisation=2604,myjobscotland,True,,Skilled Worker
+Argyll and Bute Council,https://myjobscotland.gov.uk/search-jobs?organisation=2605&show_organisation,myjobscotland,True,,Skilled Worker
+Ashford Borough Council,https://ce0872li.webitrent.com/ce0872li_webrecruitment/wrd/run/ETREC179GF.open?WVID=9966750H9s,manual,False,Council association inferred from document order; please verify. Page could not be independently checked.,Skilled Worker
+Basildon Borough Council,https://basbcli.webitrent.com/basbcli_webrecruitment/wrd/run/etrec179gf.open?wvid=7164787PyS,manual,True,,Skilled Worker
+Basingstoke & Deane Borough Council,https://careers.basingstoke.gov.uk/vacancies.html#filter=p_web_site_id%3D6700%26p_published_to%3DWWW%26p_language%3DDEFAULT%26p_direct%3DY%26p_format%3DMOBILE%26p_include_exclude_from_list%3DN%26p_search%3D,manual,True,,Skilled Worker
+Bassetlaw District Council,https://ce0017li.webitrent.com/ce0017li_webrecruitment/wrd/run/ETREC179GF.open?WVID=8070960wxx,manual,True,,Skilled Worker
+Bath and North East Somerset Council,https://www.jobtrain.co.uk/bathnesjobs/Home/Job,manual,True,,Skilled Worker
+Bedford Borough Council,https://bedfordboroughcouncil-career.talent-soft.com/job/list-of-jobs.aspx,talentsoft,True,,Skilled Worker
+"Birmingham City Council, Corporate",https://www.wmjobs.co.uk/searchjobs/?Sector=1&keywords=%22birmingham+city+council%22&countrycode=GB&sort=Date,manual,True,Supplied WMJobs link contains sector and keyword filters; it may omit roles.,Skilled Worker
+BLACKPOOL COUNCIL,,manual,False,,Skilled Worker
+"Bournemouth, Christchurch and Poole Council",,manual,False,,Skilled Worker
+Bracknell Forest Borough Council,,manual,False,,Skilled Worker
+Bradford Metropolitan District Council,,manual,False,,Skilled Worker
+Braintree District Council,,manual,False,,Skilled Worker
+Brent Council,,manual,False,,Skilled Worker
+Brentwood Borough Council,,manual,False,,Skilled Worker
+Bridgend County Borough Council,,manual,False,,Skilled Worker
+Brighton & Hove City Council,,manual,False,,Skilled Worker
+Bristol City Council,,manual,False,,Skilled Worker
+Buckinghamshire County Council Services,,manual,False,,Skilled Worker
+Bury Council,,manual,False,,Skilled Worker
+Cambridge City Council,,manual,False,,Skilled Worker
+Cambridgeshire County Council,,manual,False,,Skilled Worker
+Cannock Chase District Council,,manual,False,,Skilled Worker
+Cardiff Council,,manual,False,,Skilled Worker
+Carmarthenshire County Council,,manual,False,,Skilled Worker
+Castle Point Borough Council,,manual,False,,Skilled Worker
+Ceredigion County Council,,manual,False,,Skilled Worker
+Cherwell District Council,,manual,False,,Skilled Worker
+Cheshire East Borough Council,,manual,False,,Skilled Worker
+Chichester District Council,,manual,False,,Skilled Worker
+Chorley Borough Council,,manual,False,,Skilled Worker
+City and County of Swansea,,manual,False,,Skilled Worker
+City of Doncaster Council,,manual,False,,Skilled Worker
+City of London Corporation,,manual,False,,Creative Worker; Skilled Worker
+City of Wolverhampton Council,,manual,False,,Skilled Worker
+Colchester City Council,,manual,False,,Skilled Worker
+Cornwall Council,,manual,False,,Skilled Worker
+Coventry City Council,,manual,False,,Skilled Worker
+Cumberland Council,,manual,False,,Skilled Worker
+Dacorum Borough Council,,manual,False,,Skilled Worker
+Derbyshire County Council,,manual,False,,Skilled Worker
+Devon County Council,,manual,False,,Skilled Worker
+Dorset Council,,manual,False,,Skilled Worker
+Dover District Council,,manual,False,,Skilled Worker
+Dumfries and Galloway Council,,manual,False,,Skilled Worker
+Dundee City Council,,manual,False,,Creative Worker; International Agreement; Skilled Worker
+Durham County Council,,manual,False,,Skilled Worker
+East Ayrshire Council,,manual,False,,Skilled Worker
+East Devon District Council,,manual,False,,Skilled Worker
+East Lothian Council,,manual,False,,Skilled Worker
+East Riding of Yorkshire Council,,manual,False,,Skilled Worker
+East Suffolk Council,,manual,False,,Skilled Worker
+East Sussex County Council,,manual,False,,Skilled Worker
+Eastbourne Borough Council,,manual,False,,Skilled Worker
+Essex County Council,,manual,False,,Skilled Worker; Government Authorised Exchange
+Falkirk Council,,manual,False,,Skilled Worker
+Fife Council,,manual,False,,Creative Worker; Skilled Worker
+Gateshead Council,,manual,False,,Skilled Worker
+Gedling Borough Council,,manual,False,,Skilled Worker
+Glasgow City Council,,manual,False,,Skilled Worker
+Gloucestershire County Council,,manual,False,,Skilled Worker
+Gravesham Borough Council,,manual,False,,Skilled Worker
+Greenwich Borough Council,,manual,False,,Skilled Worker
+Hampshire County Council,,manual,False,,Skilled Worker
+Hastings Borough Council,,manual,False,,Skilled Worker
+Herefordshire Council,,manual,False,,Skilled Worker
+Hertfordshire County Council,,manual,False,,Skilled Worker
+Hertsmere Borough Council,,manual,False,,Skilled Worker
+Hull City Council,,manual,False,,Skilled Worker
+Hyndburn Borough Council,,manual,False,,Skilled Worker
+Kent County Council,,manual,False,,Skilled Worker
+Kirklees Metropolitan Council,,manual,False,,Creative Worker; Skilled Worker
+Knowsley Metropolitan Borough Council,,manual,False,,Skilled Worker
+Lancashire County Council,,manual,False,,Skilled Worker
+Leeds City Council,,manual,False,,Skilled Worker
+Leicester City Council,,manual,False,,Skilled Worker
+Leicestershire County Council,,manual,False,,Skilled Worker
+Lincolnshire County Council,,manual,False,,Skilled Worker
+Liverpool City Council,,manual,False,,Skilled Worker
+London Borough Haringey,,manual,False,,Skilled Worker
+London Borough of Barking & Dagenham,,manual,False,,Skilled Worker
+London Borough of Barnet,,manual,False,,Skilled Worker
+London Borough of Bexley,,manual,False,,Skilled Worker
+London Borough of Bromley,,manual,False,,Skilled Worker
+London Borough of Camden,,manual,False,,Skilled Worker
+London Borough of Ealing,,manual,False,,Skilled Worker
+London Borough of Enfield,,manual,False,,Skilled Worker
+London Borough of Hackney,,manual,False,,Skilled Worker
+London Borough of Hammersmith and Fulham,,manual,False,,Skilled Worker
+London Borough of Harrow,,manual,False,,Creative Worker; Skilled Worker
+London Borough of Havering,,manual,False,,Skilled Worker
+London Borough of Hillingdon,,manual,False,,Skilled Worker
+London Borough of Hounslow,,manual,False,,Skilled Worker
+London Borough of Islington,,manual,False,,Skilled Worker
+London Borough of Lambeth,,manual,False,,Skilled Worker
+London Borough of Lewisham,,manual,False,,Skilled Worker; Creative Worker
+London Borough of Merton,,manual,False,,Skilled Worker
+London Borough of Redbridge,,manual,False,,Skilled Worker
+London Borough of Richmond upon Thames,,manual,False,,Skilled Worker
+London Borough of Sutton,,manual,False,,Skilled Worker
+London Borough of Tower Hamlets,,manual,False,,Skilled Worker
+London Borough of Waltham Forest,,manual,False,,Skilled Worker
+London Borough Wandsworth,,manual,False,,Skilled Worker
+Luton Borough Council,,manual,False,,Skilled Worker
+Maidstone Borough Council,,manual,False,,Skilled Worker
+Manchester City Council,,manual,False,,Skilled Worker
+Medway Council,,manual,False,,Skilled Worker
+Mid Devon District Council,,manual,False,,Skilled Worker
+Midlothian Council,,manual,False,,Skilled Worker
+Milton Keynes Council,,manual,False,,Skilled Worker
+Monmouthshire County Council,,manual,False,,Skilled Worker
+Moray Council,,manual,False,,Skilled Worker
+Neath Port Talbot County Borough Council,,manual,False,,Skilled Worker
+New Forest District Council,,manual,False,,Skilled Worker
+Newark and Sherwood District Council,,manual,False,,Skilled Worker
+Newcastle City Council,,manual,False,,Skilled Worker
+Newham Council,,manual,False,,Skilled Worker
+Newport City Council,,manual,False,,Skilled Worker
+Norfolk County Council,,manual,False,,Skilled Worker
+North Devon Council,,manual,False,,Skilled Worker
+North East Lincolnshire Council,,manual,False,,Skilled Worker
+North Lanarkshire Council,,manual,False,,Skilled Worker
+North Somerset Council,,manual,False,,Skilled Worker
+North Tyneside Council,,manual,False,,Skilled Worker
+North Yorkshire Council,,manual,False,,Skilled Worker
+Northumberland County Council,,manual,False,,Skilled Worker
+Norwich City Council,,manual,False,,Skilled Worker
+Nottingham City Council,,manual,False,,Skilled Worker
+Nottinghamshire County Council,,manual,False,,Skilled Worker
+Nuneaton and Bedworth Borough Council,,manual,False,,Skilled Worker
+Oldham Council,,manual,False,,Skilled Worker
+Orkney Islands Council,,manual,False,,Skilled Worker
+Oxfordshire County Council,,manual,False,,Skilled Worker
+Pembrokeshire County Council,,manual,False,,Skilled Worker
+Pendle Borough Council,,manual,False,,Skilled Worker
+Perth & Kinross Council,,manual,False,,Skilled Worker
+Peterborough City Council,,manual,False,,Skilled Worker
+Plymouth City Council,,manual,False,,Skilled Worker
+Pontypridd Town Council,,manual,False,,Skilled Worker
+Portsmouth Local Authority,,manual,False,,Skilled Worker
+Reading Borough Council,,manual,False,,Skilled Worker
+Reigate and Banstead Borough Council,,manual,False,,Skilled Worker
+Renfrewshire Council,,manual,False,,Skilled Worker
+Rhondda Cynon Taf County Borough Council,,manual,False,,Skilled Worker
+RMBC Council,,manual,False,,Skilled Worker
+Rochdale Borough Council,,manual,False,,Skilled Worker
+Rother District Council,,manual,False,,Skilled Worker
+Royal Borough of Kingston upon Thames,,manual,False,,Skilled Worker
+Royal Borough of Windsor and Maidenhead,,manual,False,,Skilled Worker
+Rushcliffe Borough Council,,manual,False,,Skilled Worker
+Rushmoor Borough Council,,manual,False,,Skilled Worker
+Rutland County Council,,manual,False,,Skilled Worker
+Salford City Council,,manual,False,,Creative Worker; Skilled Worker
+Scottish Borders Council,,manual,False,,Skilled Worker
+Sefton Metropolitan Borough Council,,manual,False,,Skilled Worker
+Sheffield City Council,,manual,False,,Skilled Worker
+Shetland Islands Council,,manual,False,,Skilled Worker
+Slough Borough Council,,manual,False,,Skilled Worker
+Solihull Metropolitan Borough Council,,manual,False,,Skilled Worker
+Somerset Council,,manual,False,,Skilled Worker
+South Ayrshire Council,,manual,False,,Skilled Worker
+South Derbyshire District Council,,manual,False,,Skilled Worker
+South Gloucestershire Council,,manual,False,,Skilled Worker
+South Ribble Borough Council,,manual,False,,Skilled Worker
+South Tyneside Council,,manual,False,,Skilled Worker
+Southampton City Council,,manual,False,,Skilled Worker
+Southend-on-Sea Borough Council,,manual,False,,Skilled Worker
+Southwark Council,,manual,False,,Skilled Worker
+Spelthorne Borough Council,,manual,False,,Skilled Worker
+St.Helens Council,,manual,False,,Skilled Worker
+Staffordshire County Council,,manual,False,,Skilled Worker
+Stevenage Borough Council,,manual,False,,Skilled Worker
+Stirling Council,,manual,False,,Skilled Worker
+Stockport Council,,manual,False,,Skilled Worker
+Stockton on Tees Borough Council,,manual,False,,Skilled Worker; Creative Worker
+Stoke-on-Trent City Council,,manual,False,,Skilled Worker
+Suffolk County Council,,manual,False,,Skilled Worker
+Surrey County Council,,manual,False,,Skilled Worker
+Swale Borough Council,,manual,False,,Skilled Worker
+Swindon Borough Council,,manual,False,,Skilled Worker
+Thanet District Council,,manual,False,,Skilled Worker
+The City of Edinburgh Council,,manual,False,,Skilled Worker
+The Highland Council,,manual,False,,Skilled Worker
+The Royal Borough of Kensington and Chelsea,,manual,False,,Skilled Worker
+Thurrock Borough Council,,manual,False,,Skilled Worker
+Torbay Council,,manual,False,,Skilled Worker
+Vale of Glamorgan Council,,manual,False,,Skilled Worker
+Wakefield Metropolitan District Council,,manual,False,,Skilled Worker
+Walsall Council,,manual,False,,Skilled Worker
+Warrington Borough Council,,manual,False,,Skilled Worker
+Warwickshire County Council,,manual,False,,Skilled Worker
+Watford Borough Council,,manual,False,,Skilled Worker
+Waverley Borough Council,,manual,False,,Skilled Worker
+West Berkshire District Council,,manual,False,,Skilled Worker
+West Lothian Council,,manual,False,,Skilled Worker
+West Northamptonshire Council,,manual,False,,Skilled Worker
+West Sussex County Council,,manual,False,,Skilled Worker
+Westminster City Council,,manual,False,,Skilled Worker
+Westmorland & Furness Council,,manual,False,,Skilled Worker
+Wiltshire Council,,manual,False,,Skilled Worker
+Wirral Council,,manual,False,,Skilled Worker
+Wokingham Borough Council,,manual,False,,Skilled Worker
+Worcestershire County Council,,manual,False,,Skilled Worker

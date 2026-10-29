@@ -1,0 +1,7 @@
+.state/
+.env
+.env.*
+!.env.example
+import-review.csv
+tracker
+*.zip
