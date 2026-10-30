@@ -1,0 +1,36 @@
+name: Verify Oracle careers connector
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/verify-oracle.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: true
+      - name: Select Oracle public career sources
+        shell: python
+        run: |
+          import csv
+          rows=[r for r in csv.DictReader(open('config/councils.csv')) if r['adapter']=='oracle']
+          with open('/tmp/oracle-config.csv','w') as f:
+            w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
+      - run: go run ./cmd/tracker -config /tmp/oracle-config.csv -out /tmp/oracle-report.json -state /tmp/oracle-state.json
+      - name: Verify public results
+        shell: python
+        run: |
+          import json
+          r=json.load(open('/tmp/oracle-report.json'))
+          for c in r['checks']:
+            print(c['name'],c['status'],c['reviewed'],c['message'])
+            assert c['status']=='checked', 'Oracle source is not fully verified'
+          for j in r['jobs']:
+            assert j['title'] and j['description'] and j['url']
+          print('Roles with dates:',sum(bool(j['posted'] and j['deadline']) for j in r['jobs']))

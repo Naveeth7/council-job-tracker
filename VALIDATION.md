@@ -23,3 +23,6 @@ First-found dates belong to this scan. Missing posting dates remain empty. Broad
 
 ### Additional connectors (29 October 2026)
 Added deterministic scanner tests covering Jobtrain pagination, retention of non-keyword roles, missing listing pages marked partial, Hireserve feed discovery and detail fallback, WMJobs whitespace links and location arrays, and security challenge detection without retries. Smoke-tested parsing against freshly fetched Bath, Birmingham and Basingstoke adverts. Full live scans run separately; dashboard coverage remains authoritative for current success/failure counts.
+
+### Oracle careers connector (30 October 2026)
+Added tests for full-description keyword matching, retaining non-keyword vacancies, pagination, advertised-count mismatches, missing pages, explicit dates/sponsorship, wrong detail IDs and job limits. Live local and scheduled-runner checks are reported separately; current dashboard coverage is authoritative.

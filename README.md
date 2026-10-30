@@ -7,7 +7,7 @@ A public, read-only council vacancy dashboard with a Go checker, scheduled GitHu
 - Searchable public dashboard; council and status filters; first-found/deadline sorting; CSV export.
 - The existing 206-entry council sponsor list and all 11 supplied careers links.
 - Collect all readable vacancies with selectable IT & Technology and Business & Administration keyword groups. No job-category filter. `IT` is uppercase, whole-word to avoid the everyday pronoun "it"; the other terms are case-insensitive whole words, and analyst also matches analysts. Broad matches such as scientific technical roles are intentionally included.
-- Go connectors for **MyJobScotland, Talentsoft, Jobtrain, Hireserve and iTrent**, plus a WMJobs connector subject to runner access.
+- Go connectors for **MyJobScotland, Talentsoft, Jobtrain, Hireserve, iTrent and Oracle**, plus a WMJobs connector subject to runner access.
 - Pagination and missing-description checks. If the advertised vacancy count exceeds discovered URLs, coverage is marked partial. Limits are 20 listing pages and 300 detail pages per council per run.
 - robots.txt checks, request spacing, HTTP timeouts and visible failure reporting. No bypasses, logins or CAPTCHA handling.
 - TiDB-backed deduplication and history; optional new-job email digest using Resend.
@@ -25,7 +25,7 @@ This is a first release, **not full coverage of all 206 councils**. Only 11 have
 | Ashford, Basildon, Bassetlaw | iTrent public JSON search and full-profile connector |
 | Basingstoke and Deane | Hireserve feed plus advert detail connector |
 | Bath and North East Somerset | Jobtrain card pagination plus advert detail connector; includes partner/school adverts |
-| Birmingham | WMJobs connector works locally; GitHub runner currently receives HTTP 403 for robots.txt and skips collection |
+| Birmingham | Direct council Oracle careers site; paginated public search plus full advert details. Replaces the inaccessible WMJobs source. |
 
 The live Council coverage tab is authoritative for each run. Transient failures and count mismatches can produce partial coverage even on supported platforms. iTrent compares collected descriptions with the API's advertised total; if additional records are not retrieved, the source is marked partial.
 
@@ -105,7 +105,7 @@ Edit `config/councils.csv` in GitHub or Excel (save as UTF-8 CSV). Columns:
 | --- | --- |
 | `name` | Registered council name; keep stable to preserve history |
 | `url` | HTTPS careers listing URL |
-| `adapter` | `myjobscotland`, `talentsoft`, `jobtrain`, `hireserve`, `itrent`, `wmjobs`, or `manual` |
+| `adapter` | `myjobscotland`, `talentsoft`, `jobtrain`, `hireserve`, `itrent`, `oracle`, `wmjobs`, or `manual` |
 | `confirmed` | `true` only after verifying the council/link association |
 | `notes` | Internal source-review notes; not published in dashboard output |
 | `routes` | Routes recorded in the sponsor register |
@@ -165,3 +165,6 @@ The scanner retains all collected vacancies, including those without keyword mat
 - Aberdeenshire: verified council-only organisation 2603; Ashford's portal identity verified through the council website.
 - iTrent: initialise an anonymous public search session in memory, fetch the same public JSON search/profile endpoints used by the website, and retain every readable role. Session values are excluded from job links, IDs, reports and logs. Compare collected records with total_rec; additional unretrieved pages mark coverage partial. Security challenges remain blocked, with no bypass attempt. Some local/cloud environments are challenged while the scheduled GitHub runner can read these sites.
 - One retry for transient request failures or server errors; no retries for access/security challenges. Partial pagination preserves readable results and marks coverage incomplete.
+
+### Birmingham direct careers source
+Birmingham uses its own Oracle Candidate Experience site (CX_1). The connector reads all categories with paginated public findReqs search, checks TotalJobsCount, then fetches full descriptions and dates using ById. Each detail ID must match the listing. Missing pages, repeated pages, missing descriptions and limits produce partial coverage. No credentials or applications are involved. The original WMJobs source remains available as a connector but is not used for this council.
