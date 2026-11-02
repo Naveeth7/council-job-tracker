@@ -168,3 +168,11 @@ The scanner retains all collected vacancies, including those without keyword mat
 
 ### Birmingham direct careers source
 Birmingham uses its own Oracle Candidate Experience site (CX_1). The connector reads all categories with paginated public findReqs search, checks TotalJobsCount, then fetches full descriptions and dates using ById. Each detail ID must match the listing. Missing pages, repeated pages, missing descriptions and limits produce partial coverage. No credentials or applications are involved. The original WMJobs source remains available as a connector but is not used for this council.
+
+### Blackpool–Cherwell batch (2 November 2026)
+
+The next 20 sponsor-list entries, starting with Blackpool and ending with Cherwell, now have researched career URLs in `config/councils.csv`. The original registered sponsor names are retained, including the former Buckinghamshire county council name; its link is to the current Buckinghamshire Council careers portal. Official council reference URLs are recorded in each row's notes.
+
+Additional connectors cover Greater Jobs (Blackpool employer only), TribePad, JGP, Buckinghamshire, Ceredigion, Cardiff's public search endpoint and Cannock's shared engageATS portal. iTrent follows advertised record ranges. JGP and TribePad can read the visible advert where JobPosting data omits the description or is malformed. Buckinghamshire keyword matching uses the full advert rather than the short structured teaser. Cannock's connector excludes Stafford-branded cards on the shared portal. School and partner adverts may appear on council portals; check the advertised employer.
+
+`verify-next20.yml` provides a separate public-source verification run without database or email credentials. A configured URL does not establish complete coverage: each dashboard source check reports whether collection was complete, partial, blocked, failed or needs attention. Human-verification challenges are not bypassed. The 175 entries after this batch remain unconfigured pending review. Email remains optional and is not enabled by this change.

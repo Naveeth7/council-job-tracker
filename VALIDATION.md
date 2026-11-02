@@ -26,3 +26,7 @@ Added deterministic scanner tests covering Jobtrain pagination, retention of non
 
 ### Oracle careers connector (30 October 2026)
 Added tests for full-description keyword matching, retaining non-keyword vacancies, pagination, advertised-count mismatches, missing pages, explicit dates/sponsorship, wrong detail IDs and job limits. Live local and scheduled-runner checks are reported separately; current dashboard coverage is authoritative.
+
+## Blackpool–Cherwell batch
+
+Added regression coverage for TribePad pagination and collection of non-keyword roles, JGP descriptions and deadlines when structured descriptions are absent, Buckinghamshire full-advert keyword matching, and multi-page iTrent results (including missing-page detection). Added rejection of unexpected empty Cardiff search responses and detection of Oleeo's human-verification screen. Local tests and vet are required before publication; `verify-next20.yml` records live source outcomes from GitHub's runner. Local network access may differ from the runner, particularly for iTrent sites.

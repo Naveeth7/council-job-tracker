@@ -1,0 +1,45 @@
+name: Verify Blackpool to Cherwell career sources
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/verify-next20.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: true
+      - name: Select the requested 20 councils
+        shell: python
+        run: |
+          import csv
+          rows=list(csv.DictReader(open('config/councils.csv')))
+          start=next(i for i,r in enumerate(rows) if r['name']=='BLACKPOOL COUNCIL')
+          selected=rows[start:start+20]
+          assert len(selected)==20 and selected[-1]['name']=='Cherwell District Council'
+          with open('/tmp/next20.csv','w') as f:
+            w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(selected)
+      - name: Read public career sources without database or email credentials
+        run: go run ./cmd/tracker -config /tmp/next20.csv -out /tmp/next20-report.json -state /tmp/next20-state.json
+      - name: Summarise coverage
+        shell: python
+        run: |
+          import json
+          from collections import Counter
+          r=json.load(open('/tmp/next20-report.json'))
+          for c in r['checks']:
+            print(c['name'],c['status'],c['reviewed'],c['message'])
+          print('Coverage:',dict(Counter(c['status'] for c in r['checks'])))
+          print('Jobs:',len(r['jobs']))
+          print('Posted dates:',sum(bool(j['posted']) for j in r['jobs']))
+          print('Deadlines:',sum(bool(j['deadline']) for j in r['jobs']))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: next20-public-results
+          path: /tmp/next20-report.json

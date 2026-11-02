@@ -83,9 +83,12 @@ func (s *Scanner) allowed(ctx context.Context, raw string) error {
 }
 func securityChallenge(b []byte) bool {
 	lower := strings.ToLower(string(b))
-	return strings.Contains(lower, "mhr cloud services | challenge") || strings.Contains(lower, "verify you are human")
+	return strings.Contains(lower, "mhr cloud services | challenge") || strings.Contains(lower, "verify you are human") || strings.Contains(lower, "we just need to confirm you're a real person")
 }
 func (s *Scanner) data(ctx context.Context, raw string) ([]byte, error) {
+	return s.requestData(ctx, raw, nil, nil)
+}
+func (s *Scanner) requestData(ctx context.Context, raw string, form url.Values, headers map[string]string) ([]byte, error) {
 	if e := s.allowed(ctx, raw); e != nil {
 		return nil, e
 	}
@@ -95,15 +98,27 @@ func (s *Scanner) data(ctx context.Context, raw string) ([]byte, error) {
 			return nil, ctx.Err()
 		case <-time.After(s.Delay):
 		}
-		req, e := http.NewRequestWithContext(ctx, "GET", raw, nil)
+		method := "GET"
+		var body io.Reader
+		if form != nil {
+			method = "POST"
+			body = strings.NewReader(form.Encode())
+		}
+		req, e := http.NewRequestWithContext(ctx, method, raw, body)
 		if e != nil {
 			return nil, e
 		}
 		req.Header.Set("User-Agent", userAgent)
+		if form != nil {
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		}
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
 		if u, err := url.Parse(raw); err == nil && strings.HasSuffix(u.Path, ".json") {
 			req.Header.Set("Accept", "application/json")
 			req.Header.Set("X-Requested-With", "XMLHttpRequest")
-			if strings.Contains(u.Hostname(), "webitrent.com") {
+			if strings.HasSuffix(strings.ToLower(u.Path), "etrec106gf.json") || strings.HasSuffix(strings.ToLower(u.Path), "etrec107gf.json") {
 				referer := u.ResolveReference(&url.URL{Path: "ETREC179GF.open", RawQuery: url.Values{"WVID": {u.Query().Get("WVID")}}.Encode()})
 				req.Header.Set("Referer", referer.String())
 			}
@@ -156,13 +171,19 @@ func (s *Scanner) ScanCouncil(ctx context.Context, c Council) ([]Job, Check) {
 	if !c.Confirmed {
 		return fail("needs_verification", "Confirm the supplied link belongs to this council, then set confirmed=true.")
 	}
+	if c.Adapter == "greater" {
+		return s.scanGreater(ctx, c)
+	}
+	if c.Adapter == "cherwell" {
+		return s.scanCherwell(ctx, c)
+	}
 	if c.Adapter == "oracle" {
 		return s.scanOracle(ctx, c)
 	}
 	if c.Adapter == "itrent" {
 		return s.scanITrent(ctx, c)
 	}
-	if c.Adapter != "myjobscotland" && c.Adapter != "talentsoft" && c.Adapter != "wmjobs" && c.Adapter != "jobtrain" && c.Adapter != "hireserve" {
+	if c.Adapter != "myjobscotland" && c.Adapter != "talentsoft" && c.Adapter != "wmjobs" && c.Adapter != "jobtrain" && c.Adapter != "hireserve" && c.Adapter != "tribepad" && c.Adapter != "jgp" && c.Adapter != "bucks" && c.Adapter != "ceredigion" && c.Adapter != "castlepoint" && c.Adapter != "oleeo" && c.Adapter != "cardiff" && c.Adapter != "engageats" {
 		return fail("manual_check", "This recruitment platform needs a tested connector. Open the careers page for now.")
 	}
 	next := c.URL
@@ -170,8 +191,20 @@ func (s *Scanner) ScanCouncil(ctx context.Context, c Council) ([]Job, Check) {
 	seenJobs := map[string]bool{}
 	jobURLs := []string{}
 	partial := false
+	confirmedEmpty := false
 	expectedTotal := 0
 	feedJobs := map[string]Job{}
+	if c.Adapter == "cardiff" || c.Adapter == "engageats" {
+		var e error
+		jobURLs, feedJobs, expectedTotal, e = s.publicPortalLinks(ctx, c)
+		if e != nil {
+			if len(jobURLs) == 0 {
+				return fail("failed", e.Error())
+			}
+			partial = true
+		}
+		next = ""
+	}
 	if c.Adapter == "hireserve" {
 		var e error
 		jobURLs, feedJobs, expectedTotal, e = s.hireserveLinks(ctx, c)
@@ -195,6 +228,9 @@ func (s *Scanner) ScanCouncil(ctx context.Context, c Council) ([]Job, Check) {
 			break
 		}
 		ls := links(n, next, c.Adapter)
+		if c.Adapter == "jgp" && strings.Contains(strings.ToLower(text(n)), "no vacancies") {
+			confirmedEmpty = true
+		}
 		if t := advertisedTotal(n); t > expectedTotal {
 			expectedTotal = t
 		}
@@ -208,6 +244,12 @@ func (s *Scanner) ScanCouncil(ctx context.Context, c Council) ([]Job, Check) {
 	}
 	if expectedTotal > len(jobURLs) {
 		partial = true
+	}
+	if len(jobURLs) == 0 && (c.Adapter == "cardiff" || c.Adapter == "engageats") && expectedTotal == 0 && !partial {
+		return fail("checked", "The public search explicitly reports no vacancies.")
+	}
+	if len(jobURLs) == 0 && confirmedEmpty && !partial {
+		return fail("checked", "The recruitment portal explicitly reports no vacancies.")
 	}
 	if len(jobURLs) == 0 {
 		return fail("needs_attention", "No readable vacancy links were found. The page may be empty, changed, or require JavaScript; zero jobs is not confirmed.")
@@ -225,6 +267,18 @@ func (s *Scanner) ScanCouncil(ctx context.Context, c Council) ([]Job, Check) {
 			continue
 		}
 		jobs := parseJobs(n, raw, c.Name)
+		if c.Adapter == "tribepad" && len(jobs) == 0 {
+			jobs = tribePadDetail(n, raw, c.Name)
+		}
+		if c.Adapter == "jgp" && len(jobs) == 0 {
+			jobs = jgpDetail(n, raw, c.Name)
+		}
+		if c.Adapter == "cardiff" || c.Adapter == "engageats" {
+			jobs = publicPortalDetail(n, raw, c, feedJobs[raw])
+		}
+		if c.Adapter == "bucks" {
+			jobs = bucksFullDescription(n, jobs)
+		}
 		if c.Adapter == "hireserve" {
 			if fallback, ok := feedJobs[raw]; ok {
 				if len(jobs) == 0 {

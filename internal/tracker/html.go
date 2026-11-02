@@ -195,7 +195,7 @@ func parseJobs(n *html.Node, source, council string) []Job {
 
 func advertisedTotal(n *html.Node) int {
 	s := text(n)
-	for _, pattern := range []string{`(?i)Showing\s+\d+\s*[-–]\s*\d+\s+of\s+(\d+)`, `(?i)Number of results:\s*(\d+)`, `(?i)Found\s+(\d+)\s+jobs`} {
+	for _, pattern := range []string{`(?i)Showing\s+\d+\s*[-–]\s*\d+\s+of\s+(\d+)`, `(?i)Number of results:\s*(\d+)`, `(?i)Found\s+(\d+)\s+jobs`, `(?i)(\d+)\s+jobs found`, `(?i)(\d+)\s+vacancies found`, `(?i)(\d+)\s+result\(s\) matched`} {
 		re := regexp.MustCompile(pattern)
 		if m := re.FindStringSubmatch(s); len(m) > 1 {
 			v, _ := strconv.Atoi(m[1])
@@ -238,7 +238,7 @@ func links(n *html.Node, base string, adapter string) pageLinks {
 		u.Fragment = ""
 		s := u.String()
 		p := strings.ToLower(u.Path)
-		isJob := (adapter == "myjobscotland" && strings.Contains(p, "/jobs/") && strings.TrimSuffix(p, "/") != strings.TrimSuffix(b.Path, "/")) || (adapter == "talentsoft" && strings.HasPrefix(p, "/job/job-") && strings.HasSuffix(p, ".aspx")) || (adapter == "wmjobs" && strings.HasPrefix(p, "/job/")) || (adapter == "jobtrain" && strings.HasSuffix(p, "/job/jobdetail") && u.Query().Get("JobId") != "")
+		isJob := (adapter == "myjobscotland" && strings.Contains(p, "/jobs/") && strings.TrimSuffix(p, "/") != strings.TrimSuffix(b.Path, "/")) || (adapter == "talentsoft" && strings.HasPrefix(p, "/job/job-") && strings.HasSuffix(p, ".aspx")) || (adapter == "wmjobs" && strings.HasPrefix(p, "/job/")) || (adapter == "jobtrain" && strings.HasSuffix(p, "/job/jobdetail") && u.Query().Get("JobId") != "") || (adapter == "tribepad" && strings.HasPrefix(p, "/jobs/job/")) || (adapter == "jgp" && regexp.MustCompile(`^/vacancies/[0-9]+/?$`).MatchString(p)) || (adapter == "bucks" && regexp.MustCompile(`^/job_detail/[0-9]+/?$`).MatchString(p)) || (adapter == "ceredigion" && regexp.MustCompile(`^/jobs/req[0-9]+/?$`).MatchString(p)) || (adapter == "oleeo" && strings.Contains(p, "/opp/")) || (adapter == "castlepoint" && strings.EqualFold(u.Query().Get("fa"), "jobs.viewFormStartPage") && u.Query().Get("uidForm")!="")
 		if isJob && !seen[s] {
 			out.jobs = append(out.jobs, s)
 			seen[s] = true
@@ -251,7 +251,7 @@ func links(n *html.Node, base string, adapter string) pageLinks {
 				isNext = true
 			}
 		}
-		if label == "next" || label == "next page" || strings.Contains(strings.ToLower(attr(x, "title")), "next page") {
+		if strings.HasPrefix(label, "next results page") || label == "next" || label == "next page" || strings.Contains(strings.ToLower(attr(x, "title")), "next page") {
 			isNext = true
 		}
 		if isNext {

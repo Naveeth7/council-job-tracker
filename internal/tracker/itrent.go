@@ -15,7 +15,7 @@ import (
 
 func vacancyDate(s string) string {
 	s = strings.TrimSpace(strip(s))
-	for _, layout := range []string{"20060102", "2006-01-02", "02/01/2006", "2/1/2006", "02 Jan 2006", "2 January 2006", time.RFC3339} {
+	for _, layout := range []string{"20060102", "2006-01-02", "02/01/2006", "2/1/2006", "02 Jan 2006", "2 January 2006", "2 January, 2006", time.RFC3339} {
 		if d, e := time.Parse(layout, s); e == nil {
 			return d.Format("2006-01-02")
 		}
@@ -85,9 +85,10 @@ func (s *Scanner) scanITrent(ctx context.Context, c Council) ([]Job, Check) {
 	var listing struct {
 		Results []map[string]any `json:"results"`
 		Search  struct {
-			Total int `json:"total_rec"`
-			From  int `json:"rec_from"`
-			To    int `json:"rec_to"`
+			Total int    `json:"total_rec"`
+			From  int    `json:"rec_from"`
+			PP    string `json:"results_pp"`
+			To    int    `json:"rec_to"`
 		} `json:"search"`
 	}
 	var fields map[string]json.RawMessage
@@ -105,10 +106,49 @@ func (s *Scanner) scanITrent(ctx context.Context, c Council) ([]Job, Check) {
 	if len(listing.Results) == 0 && listing.Search.Total != 0 {
 		return fail("Vacancy count was advertised but no records were readable.")
 	}
+	// Follow the portal's advertised record ranges, never assume one page is all jobs.
+	rows := append([]map[string]any{}, listing.Results...)
+	paginationIncomplete := false
+	for page := 1; listing.Search.To < listing.Search.Total; page++ {
+		if page >= s.MaxPages || len(rows) >= s.MaxJobs || listing.Search.To < 1 {
+			paginationIncomplete = true
+			break
+		}
+		previous := listing.Search.To
+		q := url.Values{}
+		for k, v := range params {
+			q[k] = append([]string{}, v...)
+		}
+		pp := len(listing.Results)
+		if pp < 1 {
+			paginationIncomplete = true
+			break
+		}
+		to := previous + pp
+		if to > listing.Search.Total {
+			to = listing.Search.Total
+		}
+		q.Set("RESULTS_PP", fmt.Sprint(pp))
+		q.Set("TOTAL_REC", fmt.Sprint(listing.Search.Total))
+		q.Set("REC_FROM", fmt.Sprint(previous+1))
+		q.Set("REC_TO", fmt.Sprint(to))
+		b, err := s.data(ctx, endpoint("etrec106gf.json", q))
+		if err != nil {
+			paginationIncomplete = true
+			break
+		}
+		// Do not let json.Unmarshal reuse maps retained from the previous page.
+		listing.Results = nil
+		if json.Unmarshal(b, &listing) != nil || len(listing.Results) == 0 || listing.Search.To <= previous {
+			paginationIncomplete = true
+			break
+		}
+		rows = append(rows, listing.Results...)
+	}
 	out := []Job{}
 	failures := 0
 	seen := map[string]bool{}
-	for _, row := range listing.Results {
+	for _, row := range rows {
 		id := str(row["vacancy_id"])
 		if id == "" || seen[id] {
 			continue
@@ -160,7 +200,7 @@ func (s *Scanner) scanITrent(ctx context.Context, c Council) ([]Job, Check) {
 	}
 	ch.Status = "checked"
 	ch.Message = fmt.Sprintf("Reviewed %d full vacancy descriptions from the public portal API across all categories; advertised %d.", ch.Reviewed, listing.Search.Total)
-	if failures > 0 || listing.Search.Total > len(out) {
+	if failures > 0 || paginationIncomplete || listing.Search.Total > len(out) {
 		ch.Status = "partial"
 		ch.Message += fmt.Sprintf(" Incomplete coverage: %d descriptions unavailable or additional records not retrieved.", failures)
 	}
