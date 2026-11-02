@@ -1,0 +1,31 @@
+name: Recheck Bury Carmarthenshire and Castle Point
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/verify-three.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: true
+      - name: Select the three sources
+        shell: python
+        run: |
+          import csv
+          rows=[r for r in csv.DictReader(open('config/councils.csv')) if r['name'] in ['Bury Council','Carmarthenshire County Council','Castle Point Borough Council']]
+          with open('/tmp/three.csv','w') as f:
+            w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
+      - run: go run ./cmd/tracker -config /tmp/three.csv -out /tmp/three-report.json -state /tmp/three-state.json
+      - name: Report current public-source coverage
+        shell: python
+        run: |
+          import json
+          r=json.load(open('/tmp/three-report.json'))
+          for c in r['checks']: print(c['name'],c['status'],c['reviewed'],c['message'])

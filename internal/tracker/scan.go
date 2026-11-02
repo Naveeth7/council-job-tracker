@@ -93,11 +93,11 @@ func (s *Scanner) requestData(ctx context.Context, raw string, form url.Values, 
 	if e := s.allowed(ctx, raw); e != nil {
 		return nil, e
 	}
-	for attempt := 0; attempt < 2; attempt++ {
+	for attempt := 0; attempt < 3; attempt++ {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
-		case <-time.After(s.Delay):
+		case <-time.After(s.Delay * time.Duration(1<<attempt)):
 		}
 		method := "GET"
 		var body io.Reader
@@ -126,7 +126,7 @@ func (s *Scanner) requestData(ctx context.Context, raw string, form url.Values, 
 		}
 		res, e := s.Client.Do(req)
 		if e != nil {
-			if attempt == 0 && ctx.Err() == nil {
+			if attempt < 2 && ctx.Err() == nil {
 				continue
 			}
 			return nil, errors.New("page request failed after retry")
@@ -136,7 +136,7 @@ func (s *Scanner) requestData(ctx context.Context, raw string, form url.Values, 
 		if securityChallenge(b) {
 			return nil, errors.New("recruitment provider security challenge blocks automated access; manual check required")
 		}
-		if res.StatusCode >= 500 && attempt == 0 {
+		if res.StatusCode >= 500 && attempt < 2 {
 			continue
 		}
 		if res.StatusCode != 200 {
