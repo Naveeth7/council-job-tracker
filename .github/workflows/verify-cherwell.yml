@@ -1,4 +1,5 @@
 name: Verify Cherwell public vacancy source
+# Check portals with numeric as well as string display-only page-size fields.
 on:
   workflow_dispatch:
   push:

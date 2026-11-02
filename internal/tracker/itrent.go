@@ -85,10 +85,9 @@ func (s *Scanner) scanITrent(ctx context.Context, c Council) ([]Job, Check) {
 	var listing struct {
 		Results []map[string]any `json:"results"`
 		Search  struct {
-			Total int    `json:"total_rec"`
-			From  int    `json:"rec_from"`
-			PP    string `json:"results_pp"`
-			To    int    `json:"rec_to"`
+			Total int `json:"total_rec"`
+			From  int `json:"rec_from"`
+			To    int `json:"rec_to"`
 		} `json:"search"`
 	}
 	var fields map[string]json.RawMessage
@@ -100,7 +99,10 @@ func (s *Scanner) scanITrent(ctx context.Context, c Council) ([]Job, Check) {
 		sort.Strings(keys)
 		return fail("Public vacancy search returned an unexpected response; field names: " + strings.Join(keys, ", "))
 	}
-	if json.Unmarshal(data, &listing) != nil {
+	if e = json.Unmarshal(data, &listing); e != nil {
+		if mismatch, ok := e.(*json.UnmarshalTypeError); ok {
+			return fail("Public vacancy search field has an unexpected type: " + mismatch.Field + " (" + mismatch.Value + ")")
+		}
 		return fail("Public vacancy search returned unreadable data.")
 	}
 	if len(listing.Results) == 0 && listing.Search.Total != 0 {
