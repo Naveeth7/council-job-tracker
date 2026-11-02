@@ -1,0 +1,52 @@
+name: Inspect remaining public council sources
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/inspect-next20.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read public link structure without sessions or credentials
+        shell: python
+        run: |
+          import urllib.request, urllib.parse, urllib.error, urllib.robotparser
+          from html.parser import HTMLParser
+          class Links(HTMLParser):
+            def __init__(self): super().__init__(); self.links=[]; self.frames=[]
+            def handle_starttag(self,tag,attrs):
+              a=dict(attrs)
+              if tag=='a' and a.get('href'): self.links.append(a['href'])
+              if tag=='iframe' and a.get('src'): self.frames.append(a['src'])
+          def get(url):
+            u=urllib.parse.urlsplit(url); origin=u.scheme+'://'+u.netloc
+            try:
+              req=urllib.request.Request(origin+'/robots.txt',headers={'User-Agent':'CouncilJobTracker/1.0'})
+              with urllib.request.urlopen(req,timeout=25) as r: robots=r.read(1048576).decode(errors='replace')
+              rp=urllib.robotparser.RobotFileParser();rp.parse(robots.splitlines())
+              if not rp.can_fetch('CouncilJobTracker/1.0',url): return 'ROBOTS_DISALLOWED'
+            except urllib.error.HTTPError as e:
+              if e.code!=404: return 'ROBOTS_HTTP_'+str(e.code)
+            req=urllib.request.Request(url,headers={'User-Agent':'CouncilJobTracker/1.0'})
+            with urllib.request.urlopen(req,timeout=30) as r: return r.read(3000000).decode(errors='replace')
+          urls=['https://www.cherwell.gov.uk/cherwell-jobs','https://apps.castlepoint.gov.uk/cpapps/index.cfm?fa=jobs','https://ccc.tal.net/candidate/jobboard/vacancy/3/adv/']
+          for url in urls:
+            print('SOURCE',urllib.parse.urlsplit(url).netloc)
+            try:
+              body=get(url)
+              if any(x in body.lower() for x in ['confirm you\'re a real person','verify you are human','mhr cloud services | challenge']): print('SECURITY_CHALLENGE');continue
+              if body.startswith('ROBOTS_'): print(body);continue
+              p=Links();p.feed(body)
+              for raw in p.links+p.frames:
+                u=urllib.parse.urlsplit(urllib.parse.urljoin(url,raw))
+                if u.scheme!='https': continue
+                if not any(k in (u.netloc+u.path).lower() for k in ['webitrent','vacanc','job','career']): continue
+                q=urllib.parse.parse_qs(u.query)
+                # Retain only documented public source identifiers. Never print
+                # anonymous session values, form inputs, cookies or request headers.
+                safe=urllib.parse.urlencode({k:v[0] for k,v in q.items() if k.lower() in ['wvid','fa','uidform']})
+                print('PUBLIC_LINK',urllib.parse.urlunsplit((u.scheme,u.netloc,u.path,safe,'')))
+            except Exception as e: print('HTTP_ERROR',getattr(e,'code',type(e).__name__))
