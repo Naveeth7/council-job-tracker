@@ -322,13 +322,11 @@ func (s *Scanner) Run(ctx context.Context, councils []Council, state *State, now
 	report := Report{GeneratedAt: now.UTC().Format(time.RFC3339), Keywords: Keywords, Jobs: []Job{}, Checks: []Check{}}
 	// Restrict publication to councils currently configured. Preserve historical jobs in private state.
 	current := map[string]bool{}
-	for _, c := range councils {
+	results := s.scanBatch(ctx, councils)
+	for index, c := range councils {
 		current[c.Name] = true
-		jobs, ch := s.ScanCouncil(ctx, c)
+		jobs, ch := results[index].jobs, results[index].check
 		report.Checks = append(report.Checks, ch)
-		if s.OnCheck != nil && c.URL != "" {
-			s.OnCheck(ch)
-		}
 		seen := map[string]bool{}
 		for _, j := range jobs {
 			seen[j.ID] = true

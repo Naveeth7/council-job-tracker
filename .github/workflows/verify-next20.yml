@@ -1,4 +1,5 @@
 name: Verify Blackpool to Cherwell career sources
+# Validate the final host-grouped collector and compatible iTrent ranges.
 on:
   workflow_dispatch:
   push:
