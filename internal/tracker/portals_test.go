@@ -81,3 +81,17 @@ func TestCardiffPostingDateUsesPublishedTimezone(t *testing.T) {
 		t.Fatal(got)
 	}
 }
+
+func TestITrentEmptyObjectRequiresExplicitZeroTotal(t *testing.T) {
+	for _, total := range []string{"0", "1"} {
+		q := url.Values{"WVID": {"view"}, "USESSION": {"anonymous"}}
+		pages := map[string]string{"/jobs?WVID=view": `<form id="ETREC179GF" action="?WVID=view&amp;USESSION=anonymous"></form>`, "/etrec106gf.json?" + q.Encode(): `{"results":{},"search":{"total_rec":` + total + `,"rec_to":""}}`}
+		js, ch := fixtureScanner(pages).ScanCouncil(context.Background(), Council{Name: "Council", URL: "https://example.org/jobs?WVID=view", Adapter: "itrent", Confirmed: true})
+		if total == "0" && (ch.Status != "checked" || len(js) != 0) {
+			t.Fatal(ch)
+		}
+		if total == "1" && ch.Status == "checked" {
+			t.Fatal("advertised vacancies silently accepted as zero")
+		}
+	}
+}

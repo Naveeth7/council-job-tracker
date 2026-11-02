@@ -1,5 +1,5 @@
 name: Verify Cherwell public vacancy source
-# Check numeric/string count and range formats across iTrent versions.
+# Check numeric/string ranges and explicitly empty result objects.
 on:
   workflow_dispatch:
   push:

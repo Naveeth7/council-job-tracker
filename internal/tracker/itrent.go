@@ -103,6 +103,12 @@ func (s *Scanner) scanITrent(ctx context.Context, c Council) ([]Job, Check) {
 	if json.Unmarshal(fields["search"], &searchFields) != nil || len(searchFields["total_rec"]) == 0 || string(searchFields["total_rec"]) == "null" || string(searchFields["total_rec"]) == `""` {
 		return fail("Public vacancy search did not provide a valid total")
 	}
+	// Some iTrent versions represent an explicitly empty result set as {}.
+	var emptyObject map[string]json.RawMessage
+	if strings.HasPrefix(strings.TrimSpace(string(fields["results"])), "{") && json.Unmarshal(fields["results"], &emptyObject) == nil && len(emptyObject) == 0 {
+		fields["results"] = json.RawMessage(`[]`)
+		data, _ = json.Marshal(fields)
+	}
 	if e = json.Unmarshal(data, &listing); e != nil {
 		if mismatch, ok := e.(*json.UnmarshalTypeError); ok {
 			return fail("Public vacancy search field has an unexpected type: " + mismatch.Field + " (" + mismatch.Value + ")")
