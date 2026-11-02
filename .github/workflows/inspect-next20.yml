@@ -16,11 +16,17 @@ jobs:
           import urllib.request, urllib.parse, urllib.error, urllib.robotparser
           from html.parser import HTMLParser
           class Links(HTMLParser):
-            def __init__(self): super().__init__(); self.links=[]; self.frames=[]
+            def __init__(self): super().__init__(); self.links=[]; self.frames=[]; self.tags=[]; self.words=[]; self.hidden=0
             def handle_starttag(self,tag,attrs):
               a=dict(attrs)
+              if tag in ['script','style']: self.hidden+=1
+              if tag in ['iframe','script','form']: self.tags.append((tag,a.get('src',a.get('action',''))))
               if tag=='a' and a.get('href'): self.links.append(a['href'])
               if tag=='iframe' and a.get('src'): self.frames.append(a['src'])
+            def handle_endtag(self,tag):
+              if tag in ['script','style']: self.hidden=max(0,self.hidden-1)
+            def handle_data(self,text):
+              if not self.hidden: self.words.append(text.strip())
           def get(url):
             u=urllib.parse.urlsplit(url); origin=u.scheme+'://'+u.netloc
             try:
@@ -32,7 +38,7 @@ jobs:
               if e.code!=404: return 'ROBOTS_HTTP_'+str(e.code)
             req=urllib.request.Request(url,headers={'User-Agent':'CouncilJobTracker/1.0'})
             with urllib.request.urlopen(req,timeout=30) as r: return r.read(3000000).decode(errors='replace')
-          urls=['https://www.cherwell.gov.uk/cherwell-jobs','https://apps.castlepoint.gov.uk/cpapps/index.cfm?fa=jobs','https://ccc.tal.net/candidate/jobboard/vacancy/3/adv/']
+          urls=['https://www.cherwell.gov.uk/cherwell-jobs']
           for url in urls:
             print('SOURCE',urllib.parse.urlsplit(url).netloc)
             try:
@@ -40,6 +46,10 @@ jobs:
               if any(x in body.lower() for x in ['confirm you\'re a real person','verify you are human','mhr cloud services | challenge']): print('SECURITY_CHALLENGE');continue
               if body.startswith('ROBOTS_'): print(body);continue
               p=Links();p.feed(body)
+              print('PUBLIC_TEXT',' '.join(' '.join(p.words).split())[:2200])
+              for tag,src in p.tags:
+                u=urllib.parse.urlsplit(urllib.parse.urljoin(url,src))
+                print('PUBLIC_RESOURCE',tag,urllib.parse.urlunsplit((u.scheme,u.netloc,u.path,'','')))
               for raw in p.links+p.frames:
                 u=urllib.parse.urlsplit(urllib.parse.urljoin(url,raw))
                 if u.scheme!='https': continue
