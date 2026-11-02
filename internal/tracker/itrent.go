@@ -9,6 +9,7 @@ import (
 	"golang.org/x/net/html"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -85,9 +86,8 @@ func (s *Scanner) scanITrent(ctx context.Context, c Council) ([]Job, Check) {
 	var listing struct {
 		Results []map[string]any `json:"results"`
 		Search  struct {
-			Total int `json:"total_rec"`
-			From  int `json:"rec_from"`
-			To    int `json:"rec_to"`
+			Total portalNumber `json:"total_rec"`
+			To    portalNumber `json:"rec_to"`
 		} `json:"search"`
 	}
 	var fields map[string]json.RawMessage
@@ -99,24 +99,28 @@ func (s *Scanner) scanITrent(ctx context.Context, c Council) ([]Job, Check) {
 		sort.Strings(keys)
 		return fail("Public vacancy search returned an unexpected response; field names: " + strings.Join(keys, ", "))
 	}
+	var searchFields map[string]json.RawMessage
+	if json.Unmarshal(fields["search"], &searchFields) != nil || len(searchFields["total_rec"]) == 0 || string(searchFields["total_rec"]) == "null" || string(searchFields["total_rec"]) == `""` {
+		return fail("Public vacancy search did not provide a valid total")
+	}
 	if e = json.Unmarshal(data, &listing); e != nil {
 		if mismatch, ok := e.(*json.UnmarshalTypeError); ok {
 			return fail("Public vacancy search field has an unexpected type: " + mismatch.Field + " (" + mismatch.Value + ")")
 		}
 		return fail("Public vacancy search returned unreadable data.")
 	}
-	if len(listing.Results) == 0 && listing.Search.Total != 0 {
+	if len(listing.Results) == 0 && int(listing.Search.Total) != 0 {
 		return fail("Vacancy count was advertised but no records were readable.")
 	}
 	// Follow the portal's advertised record ranges, never assume one page is all jobs.
 	rows := append([]map[string]any{}, listing.Results...)
 	paginationIncomplete := false
-	for page := 1; listing.Search.To < listing.Search.Total; page++ {
-		if page >= s.MaxPages || len(rows) >= s.MaxJobs || listing.Search.To < 1 {
+	for page := 1; int(listing.Search.To) < int(listing.Search.Total); page++ {
+		if page >= s.MaxPages || len(rows) >= s.MaxJobs || int(listing.Search.To) < 1 {
 			paginationIncomplete = true
 			break
 		}
-		previous := listing.Search.To
+		previous := int(listing.Search.To)
 		q := url.Values{}
 		for k, v := range params {
 			q[k] = append([]string{}, v...)
@@ -127,11 +131,11 @@ func (s *Scanner) scanITrent(ctx context.Context, c Council) ([]Job, Check) {
 			break
 		}
 		to := previous + pp
-		if to > listing.Search.Total {
-			to = listing.Search.Total
+		if to > int(listing.Search.Total) {
+			to = int(listing.Search.Total)
 		}
 		q.Set("RESULTS_PP", fmt.Sprint(pp))
-		q.Set("TOTAL_REC", fmt.Sprint(listing.Search.Total))
+		q.Set("TOTAL_REC", fmt.Sprint(int(listing.Search.Total)))
 		q.Set("REC_FROM", fmt.Sprint(previous+1))
 		q.Set("REC_TO", fmt.Sprint(to))
 		b, err := s.data(ctx, endpoint("etrec106gf.json", q))
@@ -141,7 +145,7 @@ func (s *Scanner) scanITrent(ctx context.Context, c Council) ([]Job, Check) {
 		}
 		// Do not let json.Unmarshal reuse maps retained from the previous page.
 		listing.Results = nil
-		if json.Unmarshal(b, &listing) != nil || len(listing.Results) == 0 || listing.Search.To <= previous {
+		if json.Unmarshal(b, &listing) != nil || len(listing.Results) == 0 || int(listing.Search.To) <= previous {
 			paginationIncomplete = true
 			break
 		}
@@ -201,10 +205,32 @@ func (s *Scanner) scanITrent(ctx context.Context, c Council) ([]Job, Check) {
 		ch.Reviewed++
 	}
 	ch.Status = "checked"
-	ch.Message = fmt.Sprintf("Reviewed %d full vacancy descriptions from the public portal API across all categories; advertised %d.", ch.Reviewed, listing.Search.Total)
-	if failures > 0 || paginationIncomplete || listing.Search.Total > len(out) {
+	ch.Message = fmt.Sprintf("Reviewed %d full vacancy descriptions from the public portal API across all categories; advertised %d.", ch.Reviewed, int(listing.Search.Total))
+	if failures > 0 || paginationIncomplete || int(listing.Search.Total) > len(out) {
 		ch.Status = "partial"
 		ch.Message += fmt.Sprintf(" Incomplete coverage: %d descriptions unavailable or additional records not retrieved.", failures)
 	}
 	return out, ch
+}
+
+// iTrent versions encode record ranges as either JSON numbers or strings.
+type portalNumber int
+
+func (n *portalNumber) UnmarshalJSON(b []byte) error {
+	value := strings.TrimSpace(string(b))
+	if strings.HasPrefix(value, `"`) {
+		if json.Unmarshal(b, &value) != nil {
+			return fmt.Errorf("invalid vacancy count")
+		}
+	}
+	if value == "" {
+		*n = 0
+		return nil
+	}
+	v, e := strconv.Atoi(value)
+	if e != nil || v < 0 {
+		return fmt.Errorf("invalid vacancy count")
+	}
+	*n = portalNumber(v)
+	return nil
 }

@@ -32,7 +32,7 @@ func TestITrentPaginationReadsLaterPages(t *testing.T) {
 	q := url.Values{"WVID": {"view"}, "USESSION": {"anonymous"}, "LANG": {"USA"}}
 	endpoint := func(name string, v url.Values) string { return "/" + name + "?" + v.Encode() }
 	pages := map[string]string{"/jobs?WVID=view": `<form id="ETREC179GF" action="?WVID=view&amp;USESSION=anonymous&amp;LANG=USA"></form>`}
-	pages[endpoint("etrec106gf.json", q)] = `{"results":[{"vacancy_id":"1","job_title":"Cook"}],"search":{"total_rec":2,"rec_from":1,"rec_to":1,"results_pp":1}}`
+	pages[endpoint("etrec106gf.json", q)] = `{"results":[{"vacancy_id":"1","job_title":"Cook"}],"search":{"total_rec":"2","rec_from":"1","rec_to":"1","results_pp":1}}`
 	next := url.Values{}
 	for k, v := range q {
 		next[k] = v
