@@ -72,3 +72,12 @@ func TestUnexpectedEmptySearchIsNotChecked(t *testing.T) {
 		t.Fatal(ch)
 	}
 }
+
+func TestCardiffPostingDateUsesPublishedTimezone(t *testing.T) {
+	if got := cardiffDate("2026-10-22 23:00:00", "Europe/London"); got != "2026-10-23" {
+		t.Fatal(got)
+	}
+	if got := cardiffDate("2026-11-22 23:59:59", "Europe/London"); got != "2026-11-22" {
+		t.Fatal(got)
+	}
+}

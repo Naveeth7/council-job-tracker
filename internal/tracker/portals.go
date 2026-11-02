@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Buckinghamshire's JSON-LD contains only a short teaser. Search the full
@@ -196,9 +197,9 @@ func publicPortalDetail(n *html.Node, raw string, c Council, meta Job) []Job {
 				return
 			}
 			for label, target := range map[string]*string{"posting_start_date": &meta.Posted, "posting_end_date": &meta.Deadline} {
-				re := regexp.MustCompile(`writePostingDate\("postingDate_` + label + `",\s*"(\d{4}-\d{2}-\d{2})`)
+				re := regexp.MustCompile(`writePostingDate\("postingDate_` + label + `",\s*"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})",\s*"([^"]+)"`)
 				if m := re.FindStringSubmatch(x.FirstChild.Data); len(m) > 1 {
-					*target = m[1]
+					*target = cardiffDate(m[1], m[2])
 				}
 			}
 		})
@@ -286,4 +287,16 @@ func tribePadDetail(n *html.Node, raw, council string) []Job {
 	}
 	sum := sha256.Sum256([]byte(council + "|" + raw))
 	return []Job{{ID: hex.EncodeToString(sum[:12]), Council: council, Title: title, Description: desc, URL: raw, Posted: vacancyDate(fields["Posted on"]), Deadline: vacancyDate(fields["Closing Date"]), Salary: fields["Salary"], Location: fields["Location"], Matched: Matches(title + " " + desc), Sponsorship: "Not stated — verify with employer"}}
+}
+
+func cardiffDate(stamp, zone string) string {
+	d, e := time.Parse("2006-01-02 15:04:05", stamp)
+	if e != nil {
+		return ""
+	}
+	z, e := time.LoadLocation(zone)
+	if e != nil {
+		return ""
+	}
+	return d.In(z).Format("2006-01-02")
 }

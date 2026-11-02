@@ -68,7 +68,11 @@ func run() error {
 	if e != nil {
 		return e
 	}
-	report := tracker.NewScanner().Run(ctx, councils, &state, time.Now())
+	scanner := tracker.NewScanner()
+	scanner.OnCheck = func(c tracker.Check) {
+		fmt.Printf("%s: %s (%d descriptions reviewed) — %s\n", c.Name, c.Status, c.Reviewed, c.Message)
+	}
+	report := scanner.Run(ctx, councils, &state, time.Now())
 	notifyErr := tracker.Notify(ctx, &state, report)
 	if e = store.Save(ctx, state); e != nil {
 		return e
@@ -78,11 +82,6 @@ func run() error {
 	}
 	if e = tracker.WriteJSON(*out, tracker.PublicReport(report)); e != nil {
 		return e
-	}
-	for _, c := range report.Checks {
-		if c.URL != "" {
-			fmt.Printf("%s: %s (%d descriptions reviewed)\n", c.Name, c.Status, c.Reviewed)
-		}
 	}
 	if notifyErr != nil {
 		fmt.Fprintln(os.Stderr, "Notification warning:", notifyErr)

@@ -23,6 +23,7 @@ type Scanner struct {
 	Delay             time.Duration
 	MaxPages, MaxJobs int
 	robots            map[string]*robotstxt.RobotsData
+	OnCheck           func(Check)
 }
 
 func NewScanner() *Scanner {
@@ -328,6 +329,9 @@ func (s *Scanner) Run(ctx context.Context, councils []Council, state *State, now
 		current[c.Name] = true
 		jobs, ch := s.ScanCouncil(ctx, c)
 		report.Checks = append(report.Checks, ch)
+		if s.OnCheck != nil && c.URL != "" {
+			s.OnCheck(ch)
+		}
 		seen := map[string]bool{}
 		for _, j := range jobs {
 			seen[j.ID] = true
