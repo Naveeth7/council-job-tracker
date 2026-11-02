@@ -172,6 +172,9 @@ func (s *Scanner) ScanCouncil(ctx context.Context, c Council) ([]Job, Check) {
 	if !c.Confirmed {
 		return fail("needs_verification", "Confirm the supplied link belongs to this council, then set confirmed=true.")
 	}
+	if c.Adapter == "oleeo" {
+		return s.scanOleeo(ctx, c)
+	}
 	if c.Adapter == "greater" {
 		return s.scanGreater(ctx, c)
 	}
