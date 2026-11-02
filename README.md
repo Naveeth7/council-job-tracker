@@ -105,7 +105,7 @@ Edit `config/councils.csv` in GitHub or Excel (save as UTF-8 CSV). Columns:
 | --- | --- |
 | `name` | Registered council name; keep stable to preserve history |
 | `url` | HTTPS careers listing URL |
-| `adapter` | `myjobscotland`, `talentsoft`, `jobtrain`, `hireserve`, `itrent`, `oracle`, `wmjobs`, `greater`, `tribepad`, `jgp`, `bucks`, `ceredigion`, `cardiff`, `engageats`, `oleeo`, `castlepoint`, `cherwell`, or `manual` |
+| `adapter` | `myjobscotland`, `talentsoft`, `jobtrain`, `hireserve`, `itrent`, `oracle`, `wmjobs`, `greater`, `tribepad`, `jgp`, `bucks`, `ceredigion`, `cardiff`, `engageats`, `oleeo`, `castlepoint`, or `manual` |
 | `confirmed` | `true` only after verifying the council/link association |
 | `notes` | Internal source-review notes; not published in dashboard output |
 | `routes` | Routes recorded in the sponsor register |

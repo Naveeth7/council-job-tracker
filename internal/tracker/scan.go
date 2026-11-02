@@ -175,9 +175,6 @@ func (s *Scanner) ScanCouncil(ctx context.Context, c Council) ([]Job, Check) {
 	if c.Adapter == "greater" {
 		return s.scanGreater(ctx, c)
 	}
-	if c.Adapter == "cherwell" {
-		return s.scanCherwell(ctx, c)
-	}
 	if c.Adapter == "oracle" {
 		return s.scanOracle(ctx, c)
 	}

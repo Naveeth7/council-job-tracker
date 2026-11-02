@@ -1,0 +1,35 @@
+name: Verify Cherwell public vacancy source
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/verify-cherwell.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: true
+      - name: Select the verified Cherwell source
+        shell: python
+        run: |
+          import csv
+          rows=[r for r in csv.DictReader(open('config/councils.csv')) if r['name']=='Cherwell District Council']
+          with open('/tmp/cherwell.csv','w') as f:
+            w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
+      - run: go run ./cmd/tracker -config /tmp/cherwell.csv -out /tmp/cherwell-report.json -state /tmp/cherwell-state.json
+      - name: Verify collection
+        shell: python
+        run: |
+          import json
+          r=json.load(open('/tmp/cherwell-report.json'))
+          for c in r['checks']:
+            print(c['name'],c['status'],c['reviewed'],c['message'])
+            assert c['status']=='checked'
+          print('Posted dates:',sum(bool(j['posted']) for j in r['jobs']))
+          print('Deadlines:',sum(bool(j['deadline']) for j in r['jobs']))

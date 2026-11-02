@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"golang.org/x/net/html"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -101,33 +100,4 @@ func (s *Scanner) scanGreater(ctx context.Context, c Council) ([]Job, Check) {
 		ch.Message += " Some search pages or descriptions were unavailable."
 	}
 	return out, ch
-}
-
-func (s *Scanner) scanCherwell(ctx context.Context, c Council) ([]Job, Check) {
-	n, e := s.page(ctx, c.URL)
-	if e != nil {
-		return nil, Check{Name: c.Name, URL: c.URL, Status: "failed", Message: e.Error(), CheckedAt: time.Now().UTC().Format(time.RFC3339)}
-	}
-	raw := ""
-	walk(n, func(x *html.Node) {
-		if x.Data != "a" && x.Data != "iframe" {
-			return
-		}
-		u := attr(x, "href")
-		if x.Data == "iframe" {
-			u = attr(x, "src")
-		}
-		p, e := url.Parse(u)
-		if e == nil && safeURL(u) && strings.HasSuffix(p.Hostname(), ".webitrent.com") && strings.Contains(strings.ToLower(p.Path), "etrec") {
-			raw = u
-		}
-	})
-	if raw != "" {
-		p, _ := url.Parse(raw)
-		p.Path = p.Path[:strings.LastIndex(p.Path, "/")+1] + "ETREC179GF.open"
-		c.URL = p.String()
-		c.Adapter = "itrent"
-		return s.scanITrent(ctx, c)
-	}
-	return nil, Check{Name: c.Name, URL: c.URL, Status: "needs_attention", Message: "The council careers page did not expose a supported public vacancy portal.", CheckedAt: time.Now().UTC().Format(time.RFC3339)}
 }
